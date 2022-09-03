@@ -9,6 +9,8 @@ import (
 type Text struct {
 	lines    []*Line
 	modified bool
+
+	// TODO: Implement preferences, preferences should contain information about usage of CRLF/LF
 }
 
 // Text structure initialization funcation
@@ -113,36 +115,41 @@ func (text *Text) InsertLine(cursor *Cursor) error {
 
 	targetLine := text.lines[yOffset]
 
-	// NOTE: Breaking the line at the end of the line
-	if xOffset+1 == targetLine.GetBufferLength() {
-		// TODO: Verify if this offset is correct
-		if yOffset+1 == len(text.lines) {
-			appendLine := new(Line)
-			if err := appendLine.Init(""); err != nil {
-				return err
-			}
-
-			text.lines = append(text.lines, appendLine)
-			return nil
-		}
-
-		linesHead := text.lines[:yOffset+1]
-		linesTail := text.lines[yOffset:]
-
-		appendLine := new(Line)
-		if err := appendLine.Init(""); err != nil {
+	// NOTE: Breaking the line at the start of the line
+	if xOffset == 0 {
+		line := new(Line)
+		if err := line.Init(""); err != nil {
 			return err
 		}
 
-		text.lines = append(linesHead, linesTail...)
-		text.lines[yOffset] = appendLine
+		if err := text.appendLinesAtIndex(line, yOffset); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// NOTE: B the line at the end of the line
+	if xOffset+1 == targetLine.GetBufferLength() {
+		line := new(Line)
+		if err := line.Init(""); err != nil {
+			return err
+		}
+
+		targetLine := text.lines[yOffset]
+
+		if err := text.appendLinesAtIndex(targetLine, yOffset); err != nil {
+			return err
+		}
+
+		text.lines[yOffset+1] = line
 		return nil
 	}
 
 	// NOTE: Breaking the line in middle of the line
 	targetLineBufferSlice := targetLine.GetBufferAsSlice()
 
-	targetLineHead, err := text.bufferToLine(targetLineBufferSlice[:xOffset])
+	targetLineHead, err := text.bufferToLine(targetLineBufferSlice[:xOffset+1])
 	if err != nil {
 		return err
 	}
@@ -152,20 +159,11 @@ func (text *Text) InsertLine(cursor *Cursor) error {
 		return err
 	}
 
-	// TODO: Verify if this offset is correct
-	if yOffset+1 == len(text.lines) {
-		text.lines[yOffset] = targetLineHead
-		text.lines = append(text.lines, targetLineTail)
-		return nil
+	if err := text.appendLinesAtIndex(targetLineHead, yOffset); err != nil {
+		return err
 	}
 
-	linesHead := text.lines[:yOffset+1]
-	linesTail := text.lines[yOffset:]
-
-	text.lines = append(linesHead, linesTail...)
-	text.lines[yOffset] = targetLineHead
 	text.lines[yOffset+1] = targetLineTail
-
 	return nil
 }
 
@@ -185,6 +183,25 @@ func (text *Text) bufferToLine(lineBuffer []rune) (*Line, error) {
 	}
 
 	return line, nil
+}
+
+// Helper funcation to insert lines to line container at given index
+func (text *Text) appendLinesAtIndex(line *Line, index int) error {
+	if index < 0 || index > len(text.lines) {
+		return errors.New("text: invalid index to append lines container")
+	}
+
+	if index == len(text.lines) {
+		text.lines = append(text.lines, line)
+		return nil
+	}
+
+	linesHead := text.lines[:index+1]
+	linesTail := text.lines[index:]
+
+	text.lines = append(linesHead, linesTail...)
+	text.lines[index] = line
+	return nil
 }
 
 // Return a character based on the line and offset specified by the given cursor position
