@@ -11,6 +11,7 @@ type Editor struct {
 	fileExists bool
 	console    Console
 	text       *Text
+	cursor     *Cursor
 
 	// TODO: Implement preferences
 	// TODO: Changes stack
@@ -44,6 +45,11 @@ func (editor *Editor) Init(filePath string, console Console) error {
 
 	editor.text = new(Text)
 	if err := editor.text.Init(fileTextContent, !editor.fileExists); err != nil {
+		return err
+	}
+
+	editor.cursor = new(Cursor)
+	if err := editor.cursor.Init(0, 0); err != nil {
 		return err
 	}
 
@@ -89,6 +95,155 @@ func (editor *Editor) SaveChanges() error {
 
 	if !editor.fileExists {
 		editor.fileExists = true
+	}
+
+	return nil
+}
+
+// Function is handling the movement of cursor to the left in x and y axis
+//
+// TODO: Partial cursor position change. May cause invalid cursor state.
+// Cursor position handling function callers should backup prev position
+// in order to restore it if the operation returns an error
+func (editor *Editor) moveCursorLeft() error {
+	xOffset := editor.cursor.GetOffsetX()
+	if xOffset > 0 {
+		xOffset -= 1
+		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	yOffset := editor.cursor.GetOffsetY()
+	if yOffset > 0 {
+		yOffset -= 1
+		if err := editor.cursor.SetOffsetY(xOffset); err != nil {
+			return err
+		}
+
+		xLength, err := editor.text.GetLineLength(editor.cursor)
+		if err != nil {
+			return err
+		}
+
+		xOffset = xLength
+		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
+// Function is handling the movement of cursor to the right in x and y axis
+//
+// TODO: Partial cursor position change. May cause invalid cursor state.
+// Cursor position handling function callers should backup prev position
+// in order to restore it if the operation returns an error
+func (editor *Editor) moveCursorRight() error {
+	xOffset := editor.cursor.GetOffsetX()
+
+	lineLength, err := editor.text.GetLineLength(editor.cursor)
+	if err != nil {
+		return err
+	}
+
+	if xOffset < lineLength {
+		xOffset += 1
+		if err := editor.cursor.SetOffsetY(xOffset); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	yOffset := editor.cursor.GetOffsetY()
+	if yOffset < editor.text.GetLineCount()-1 {
+		yOffset += 1
+		xOffset = 0
+		if err := editor.cursor.SetOffsets(xOffset, yOffset); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
+// Function is handling the movement of cursor to the line above in x and y axis
+//
+// TODO: Partial cursor position change. May cause invalid cursor state.
+// Cursor position handling function callers should backup prev position
+// in order to restore it if the operation returns an error
+func (editor *Editor) moveCursorUp() error {
+	yOffset := editor.cursor.GetOffsetY()
+	if yOffset == 0 {
+		return nil
+	}
+
+	yOffset -= 1
+	currentXLength, err := editor.text.GetLineLength(editor.cursor)
+	if err != nil {
+		return err
+	}
+
+	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
+		return err
+	}
+
+	targetXLength, err := editor.text.GetLineLength(editor.cursor)
+	if err != nil {
+		return err
+	}
+
+	if targetXLength < currentXLength {
+		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
+// Function is handling the movement of cursor to the line below in x and y axis
+//
+// TODO: Partial cursor position change. May cause invalid cursor state.
+// Cursor position handling function callers should backup prev position
+// in order to restore it if the operation returns an error
+func (editor *Editor) moveCursorDown() error {
+	yOffset := editor.cursor.GetOffsetY()
+	if yOffset == editor.text.GetLineCount()-1 {
+		return nil
+	}
+
+	yOffset += 1
+	currentXLength, err := editor.text.GetLineLength(editor.cursor)
+	if err != nil {
+		return err
+	}
+
+	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
+		return err
+	}
+
+	targetXLength, err := editor.text.GetLineLength(editor.cursor)
+	if err != nil {
+		return err
+	}
+
+	if targetXLength < currentXLength {
+		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	return nil

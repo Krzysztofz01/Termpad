@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// TODO: Fix references to cursor offsets via functions
 // A structure representing the text, which is a container for the List structures
 type Text struct {
 	lines    []*Line
