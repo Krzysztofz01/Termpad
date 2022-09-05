@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-// TODO: Fix references to cursor offsets via functions
 // A structure representing the text, which is a container for the List structures
 type Text struct {
 	lines    []*Line
@@ -55,7 +54,7 @@ func (text *Text) GetLineCount() int {
 
 // Return the lenght of the line based on given cursor position
 func (text *Text) GetLineLength(cursor *Cursor) (int, error) {
-	yOffset := cursor.yOffset
+	yOffset := cursor.GetOffsetY()
 
 	if yOffset < 0 {
 		return 0, errors.New("text: invalid y (vertical) negative offset requested to get")
@@ -71,7 +70,7 @@ func (text *Text) GetLineLength(cursor *Cursor) (int, error) {
 
 // Place a given character inside specific line at specific offset given by the cursor position
 func (text *Text) InsertCharacter(char rune, cursor *Cursor) error {
-	yOffset := cursor.yOffset
+	yOffset := cursor.GetOffsetY()
 
 	if yOffset < 0 {
 		return errors.New("text: invalid y (vertical) negative offset requested to insert")
@@ -87,7 +86,7 @@ func (text *Text) InsertCharacter(char rune, cursor *Cursor) error {
 
 // Remove a character inside specific line at specific offset given by the cursor position
 func (text *Text) RemoveCharacter(cursor *Cursor) error {
-	yOffset := cursor.yOffset
+	yOffset := cursor.GetOffsetY()
 
 	if yOffset < 0 {
 		return errors.New("text: invalid y (vertical) negative offset requested to remove")
@@ -103,8 +102,8 @@ func (text *Text) RemoveCharacter(cursor *Cursor) error {
 
 // Handle line inserting and line breaking
 func (text *Text) InsertLine(cursor *Cursor) error {
-	yOffset := cursor.yOffset
-	xOffset := cursor.xOffset
+	yOffset := cursor.GetOffsetY()
+	xOffset := cursor.GetOffsetX()
 
 	if yOffset < 0 {
 		return errors.New("text: invalid y (vertical) negative offset requested to split")
@@ -207,7 +206,7 @@ func (text *Text) appendLinesAtIndex(line *Line, index int) error {
 
 // Return a character based on the line and offset specified by the given cursor position
 func (text *Text) GetCharacter(cursor *Cursor) (rune, error) {
-	yOffset := cursor.yOffset
+	yOffset := cursor.GetOffsetY()
 
 	if yOffset < 0 {
 		return 0, errors.New("text: invalid y (vertical) negative offset requested to get")
