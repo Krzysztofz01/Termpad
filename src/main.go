@@ -13,6 +13,13 @@ func main() {
 
 	targetFilePath := os.Args[1]
 
+	config := new(Config)
+	if err := config.Init(); err != nil {
+		// TODO: Panic - Failed to access or create config file notification
+		os.Exit(1)
+		return
+	}
+
 	console, err := CreateConsole()
 	if err != nil {
 		// TODO: Panic - Failed to create console API instance notification

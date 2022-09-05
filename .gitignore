@@ -15,3 +15,6 @@
 
 # Go workspace file
 go.work
+
+# Termpad specific
+termpad-config.json
