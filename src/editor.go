@@ -76,21 +76,21 @@ func (editor *Editor) SaveChanges() error {
 
 	textContent, err := editor.text.GetTextAsString()
 	if err != nil {
-		if err := file.Close(); err != nil {
-			return err
+		if fileErr := file.Close(); fileErr != nil {
+			return fileErr
 		}
 		return err
 	}
 
 	if _, err := file.WriteString(*textContent); err != nil {
-		if err := file.Close(); err != nil {
-			return err
+		if fileErr := file.Close(); fileErr != nil {
+			return fileErr
 		}
 		return err
 	}
 
-	if err := file.Close(); err != nil {
-		return err
+	if fileErr := file.Close(); fileErr != nil {
+		return fileErr
 	}
 
 	if !editor.fileExists {
