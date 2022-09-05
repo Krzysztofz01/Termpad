@@ -220,7 +220,7 @@ func TestTextShouldBreaklineAtLineEnd(t *testing.T) {
 	}
 
 	cursor := new(Cursor)
-	if err := cursor.Init(10, 1); err != nil {
+	if err := cursor.Init(11, 1); err != nil {
 		t.Fail()
 	}
 
@@ -248,7 +248,7 @@ func TestTextShouldBreaklineInsideLine(t *testing.T) {
 	}
 
 	cursor := new(Cursor)
-	if err := cursor.Init(4, 1); err != nil {
+	if err := cursor.Init(5, 1); err != nil {
 		t.Fail()
 	}
 

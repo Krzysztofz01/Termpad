@@ -130,7 +130,7 @@ func (text *Text) InsertLine(cursor *Cursor) error {
 	}
 
 	// NOTE: B the line at the end of the line
-	if xOffset+1 == targetLine.GetBufferLength() {
+	if xOffset == targetLine.GetBufferLength() {
 		line := new(Line)
 		if err := line.Init(""); err != nil {
 			return err
@@ -149,12 +149,12 @@ func (text *Text) InsertLine(cursor *Cursor) error {
 	// NOTE: Breaking the line in middle of the line
 	targetLineBufferSlice := targetLine.GetBufferAsSlice()
 
-	targetLineHead, err := text.bufferToLine(targetLineBufferSlice[:xOffset+1])
+	targetLineHead, err := text.bufferToLine(targetLineBufferSlice[:xOffset])
 	if err != nil {
 		return err
 	}
 
-	targetLineTail, err := text.bufferToLine(targetLineBufferSlice[xOffset+1:])
+	targetLineTail, err := text.bufferToLine(targetLineBufferSlice[xOffset:])
 	if err != nil {
 		return err
 	}
