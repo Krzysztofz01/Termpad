@@ -200,7 +200,7 @@ func TestTextShouldBreaklineAtLineStart(t *testing.T) {
 		t.Fail()
 	}
 
-	result, err := text.GetTextAsString()
+	result, err := text.GetTextAsString(false)
 	if err != nil {
 		t.Fail()
 	}
@@ -228,7 +228,7 @@ func TestTextShouldBreaklineAtLineEnd(t *testing.T) {
 		t.Fail()
 	}
 
-	result, err := text.GetTextAsString()
+	result, err := text.GetTextAsString(false)
 	if err != nil {
 		t.Fail()
 	}
@@ -256,7 +256,7 @@ func TestTextShouldBreaklineInsideLine(t *testing.T) {
 		t.Fail()
 	}
 
-	result, err := text.GetTextAsString()
+	result, err := text.GetTextAsString(false)
 	if err != nil {
 		t.Fail()
 	}
@@ -317,7 +317,7 @@ func TestTextShouldConvertBackToString(t *testing.T) {
 		t.Fail()
 	}
 
-	result, err := text.GetTextAsString()
+	result, err := text.GetTextAsString(false)
 	if err != nil {
 		t.Fail()
 	}

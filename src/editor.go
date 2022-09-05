@@ -74,7 +74,8 @@ func (editor *Editor) SaveChanges() error {
 		return err
 	}
 
-	textContent, err := editor.text.GetTextAsString()
+	// TODO: CR support
+	textContent, err := editor.text.GetTextAsString(false)
 	if err != nil {
 		if fileErr := file.Close(); fileErr != nil {
 			return fileErr

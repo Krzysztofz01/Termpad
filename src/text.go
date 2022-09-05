@@ -227,8 +227,13 @@ func (text *Text) GetCharacter(cursor *Cursor) (rune, error) {
 }
 
 // Return the text in form of single string
-func (text *Text) GetTextAsString() (*string, error) {
+func (text *Text) GetTextAsString(useCarriageReturn bool) (*string, error) {
 	builder := strings.Builder{}
+
+	lineSeparator := "\n"
+	if useCarriageReturn {
+		lineSeparator = "\r\n"
+	}
 
 	for index, line := range text.lines {
 		if _, err := builder.WriteString(*line.GetBufferAsString()); err != nil {
@@ -236,7 +241,7 @@ func (text *Text) GetTextAsString() (*string, error) {
 		}
 
 		if index+1 < len(text.lines) {
-			if _, err := builder.WriteRune('\n'); err != nil {
+			if _, err := builder.WriteString(lineSeparator); err != nil {
 				return nil, err
 			}
 		}
