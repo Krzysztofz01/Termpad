@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"os"
+	"runtime"
 )
 
 // Structure representing the editor instance which is a warapper for text I/O
@@ -12,13 +13,13 @@ type Editor struct {
 	console    Console
 	text       *Text
 	cursor     *Cursor
+	config     *Config
 
-	// TODO: Implement preferences
 	// TODO: Changes stack
 }
 
 // Editor structure initialization funcation
-func (editor *Editor) Init(filePath string, console Console) error {
+func (editor *Editor) Init(filePath string, console Console, config *Config) error {
 	if len(filePath) <= 0 {
 		return errors.New("editor: invalid path passed to editor")
 	}
@@ -58,6 +59,13 @@ func (editor *Editor) Init(filePath string, console Console) error {
 	}
 
 	editor.console = console
+
+	if config == nil {
+		return errors.New("editor: invalid config reference")
+	}
+
+	editor.config = config
+
 	return nil
 }
 
@@ -74,8 +82,14 @@ func (editor *Editor) SaveChanges() error {
 		return err
 	}
 
-	// TODO: CR support
-	textContent, err := editor.text.GetTextAsString(false)
+	useCarriageReturn := false
+	if editor.config.UsePlatformSpecificEndOfLineSequence {
+		if runtime.GOOS == "windows" {
+			useCarriageReturn = true
+		}
+	}
+
+	textContent, err := editor.text.GetTextAsString(useCarriageReturn)
 	if err != nil {
 		if fileErr := file.Close(); fileErr != nil {
 			return fileErr
