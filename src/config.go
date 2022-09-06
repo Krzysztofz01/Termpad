@@ -27,7 +27,7 @@ type Config struct {
 // Config structure initialization function. The function is retriving the config file or creating a default one if not present
 func (config *Config) Init() error {
 	var configFileExists bool
-	if _, err := os.Stat(configFilePath); err != nil {
+	if _, err := os.Stat(configFilePath); err == nil {
 		configFileExists = true
 	} else if errors.Is(err, os.ErrNotExist) {
 		configFileExists = false

@@ -25,7 +25,7 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 
 	editor.filePath = filePath
 
-	if _, err := os.Stat(editor.filePath); err != nil {
+	if _, err := os.Stat(editor.filePath); err == nil {
 		editor.fileExists = true
 	} else if errors.Is(err, os.ErrNotExist) {
 		editor.fileExists = false
