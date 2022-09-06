@@ -25,8 +25,10 @@ func CreateConsole() (Console, error) {
 	}
 
 	// TODO: Implement color related preferences etc.
-	style := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
-	screen.SetStyle(style)
+	//
+	// Styles disabled, beacuse they are not compatible with terminal provided styles
+	// style := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
+	// screen.SetStyle(style)
 
 	screen.DisableMouse()
 
