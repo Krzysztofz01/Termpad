@@ -13,6 +13,7 @@ type Editor struct {
 	console    Console
 	text       *Text
 	cursor     *Cursor
+	history    *History
 	config     *Config
 
 	// TODO: Changes stack
@@ -51,6 +52,11 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 
 	editor.cursor = new(Cursor)
 	if err := editor.cursor.Init(0, 0); err != nil {
+		return err
+	}
+
+	editor.history = new(History)
+	if err := editor.history.Init(); err != nil {
 		return err
 	}
 
