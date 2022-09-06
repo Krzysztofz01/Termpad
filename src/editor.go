@@ -15,8 +15,6 @@ type Editor struct {
 	cursor     *Cursor
 	history    *History
 	config     *Config
-
-	// TODO: Changes stack
 }
 
 // Editor structure initialization funcation
@@ -71,6 +69,10 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 	}
 
 	editor.config = config
+
+	if err := editor.displayInitialTextContent(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -268,4 +270,49 @@ func (editor *Editor) moveCursorDown() error {
 	}
 
 	return nil
+}
+
+// Funcation is rendering all the text to the screen
+//
+// TODO: The text can be longer than the screen. The editor will require a functionality
+// to move the current visible content. The current implementation is ,,naive” and
+// does not handle screen overflow
+func (editor *Editor) displayInitialTextContent() error {
+	if err := editor.console.Clear(); err != nil {
+		return err
+	}
+
+	initCursor := new(Cursor)
+	if err := initCursor.Init(0, 0); err != nil {
+		return err
+	}
+
+	height := editor.text.GetLineCount()
+	for yIndex := 0; yIndex < height; yIndex += 1 {
+		if err := initCursor.SetOffsets(0, yIndex); err != nil {
+			return err
+		}
+
+		width, err := editor.text.GetLineLength(initCursor)
+		if err != nil {
+			return err
+		}
+
+		for xIndex := 0; xIndex < width; xIndex += 1 {
+			if err := initCursor.SetOffsets(xIndex, yIndex); err != nil {
+				return err
+			}
+
+			char, err := editor.text.GetCharacter(initCursor)
+			if err != nil {
+				return err
+			}
+
+			if err := editor.console.InsertCharacter(xIndex, yIndex, char); err != nil {
+				return err
+			}
+		}
+	}
+
+	return editor.console.Commit()
 }
