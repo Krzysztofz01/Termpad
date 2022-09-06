@@ -70,7 +70,7 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 
 	editor.config = config
 
-	if err := editor.displayInitialTextContent(); err != nil {
+	if err := editor.redrawText(); err != nil {
 		return err
 	}
 
@@ -79,7 +79,44 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 
 // Start the editor loop
 func (editor *Editor) Start() error {
-	// TODO: Implementation
+	for {
+		ev := editor.console.WatchConsoleEvent()
+		switch event := ev.(type) {
+		case ConsoleEventKeyPress:
+			{
+				if event.Key == KeyPrintable {
+					if err := editor.handleNamedPrintableKey(event); err != nil {
+						// TODO: Handle error
+					}
+				}
+
+				if err := editor.handleNamedKey(event); err != nil {
+					// TODO: Handle error
+				}
+			}
+			break
+
+		case ConsoleEventResize:
+			{
+				// TODO: Check if cursor is on screen to prevent redundant full content redraws
+				if err := editor.redrawText(); err != nil {
+					// TODO: Handle error
+				}
+			}
+			break
+		}
+	}
+
+	return errors.New("editor: not implemented")
+}
+
+func (editor *Editor) handleNamedPrintableKey(event ConsoleEventKeyPress) error {
+	// TODO: Implement
+	return errors.New("editor: not implemented")
+}
+
+func (editor *Editor) handleNamedKey(event ConsoleEventKeyPress) error {
+	// TODO: Implement
 	return errors.New("editor: not implemented")
 }
 
@@ -276,8 +313,8 @@ func (editor *Editor) moveCursorDown() error {
 //
 // TODO: The text can be longer than the screen. The editor will require a functionality
 // to move the current visible content. The current implementation is ,,naive” and
-// does not handle screen overflow
-func (editor *Editor) displayInitialTextContent() error {
+// does not handle screen overflow.
+func (editor *Editor) redrawText() error {
 	if err := editor.console.Clear(); err != nil {
 		return err
 	}
