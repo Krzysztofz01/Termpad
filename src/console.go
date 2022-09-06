@@ -1,7 +1,5 @@
 package main
 
-import "github.com/gdamore/tcell"
-
 // Contract abstraction for the underlying console API
 type Console interface {
 	// Set a given character at given console position
@@ -34,14 +32,54 @@ type Console interface {
 
 // Structure representing the key press console event
 type ConsoleEventKeyPress struct {
-	Char rune
-
-	// TODO: Implement internal key structure to avoid contract layer third-party dependencies
-	Key      tcell.Key
-	Modifier tcell.ModMask
+	Char     rune
+	Key      NamedKey
+	Modifier ModifierKey
 }
 
+// Structure representing the display/console size change event
 type ConsoleEventResize struct {
 	Width  int
 	Height int
 }
+
+// Type representing named keys, the first one, named printable is an universal representation for ASCII letters
+type NamedKey int16
+
+const (
+	KeyPrintable NamedKey = iota
+	KeyUp
+	KeyDown
+	KeyRight
+	KeyLeft
+	KeyPgUp
+	KeyPgDn
+	KeyHome
+	KeyEnd
+	KeyInsert
+	KeyDelete
+	KeyPause
+	KeyBacktab
+	KeyF1
+	KeyF2
+	KeyF3
+	KeyF4
+	KeyF5
+	KeyF6
+	KeyF7
+	KeyF8
+	KeyF9
+	KeyF10
+	KeyF11
+	KeyF12
+)
+
+// Type representing modifier keys, the first one, named none indicates that no modifiers were applied
+type ModifierKey int16
+
+const (
+	ModifierNone ModifierKey = iota
+	ModifierShift
+	ModifierCtrl
+	ModifierAlt
+)

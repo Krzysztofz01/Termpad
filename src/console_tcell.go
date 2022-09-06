@@ -78,8 +78,8 @@ func (console *ConsoleTcell) WatchConsoleEvent() interface{} {
 			{
 				return ConsoleEventKeyPress{
 					Char:     event.Rune(),
-					Key:      event.Key(),
-					Modifier: event.Modifiers(),
+					Key:      console.translateNamedKey(event.Key()),
+					Modifier: console.translateModifierKey(event.Modifiers()),
 				}
 			}
 
@@ -116,4 +116,76 @@ func (console *ConsoleTcell) GetSize() (int, int) {
 func (console *ConsoleTcell) Dispose() error {
 	console.screen.Fini()
 	return nil
+}
+
+// Helper funcation used for converting implementation specific to contract specific named key representation
+func (console *ConsoleTcell) translateNamedKey(key tcell.Key) NamedKey {
+	switch key {
+	case tcell.KeyRune:
+		return KeyPrintable
+	case tcell.KeyUp:
+		return KeyUp
+	case tcell.KeyDown:
+		return KeyDown
+	case tcell.KeyRight:
+		return KeyRight
+	case tcell.KeyLeft:
+		return KeyLeft
+	case tcell.KeyPgUp:
+		return KeyPgUp
+	case tcell.KeyPgDn:
+		return KeyPgDn
+	case tcell.KeyHome:
+		return KeyHome
+	case tcell.KeyEnd:
+		return KeyEnd
+	case tcell.KeyInsert:
+		return KeyInsert
+	case tcell.KeyDelete:
+		return KeyDelete
+	case tcell.KeyPause:
+		return KeyPause
+	case tcell.KeyBacktab:
+		return KeyBacktab
+	case tcell.KeyF1:
+		return KeyF1
+	case tcell.KeyF2:
+		return KeyF2
+	case tcell.KeyF3:
+		return KeyF3
+	case tcell.KeyF4:
+		return KeyF4
+	case tcell.KeyF5:
+		return KeyF5
+	case tcell.KeyF6:
+		return KeyF6
+	case tcell.KeyF7:
+		return KeyF7
+	case tcell.KeyF8:
+		return KeyF8
+	case tcell.KeyF9:
+		return KeyF9
+	case tcell.KeyF10:
+		return KeyF10
+	case tcell.KeyF11:
+		return KeyF11
+	case tcell.KeyF12:
+		return KeyF12
+	default:
+		return NamedKey(-1)
+	}
+}
+
+// Helper funcation used for converting implementation specific to contract specific modifier key representation
+func (console *ConsoleTcell) translateModifierKey(mod tcell.ModMask) ModifierKey {
+	switch mod {
+	case tcell.ModShift:
+		return ModifierShift
+	case tcell.ModCtrl:
+		return ModifierCtrl
+	case tcell.ModAlt:
+		return ModifierAlt
+	default:
+		return ModifierNone
+	}
 }
