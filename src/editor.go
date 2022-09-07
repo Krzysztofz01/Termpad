@@ -11,6 +11,7 @@ type Editor struct {
 	filePath   string
 	fileExists bool
 	console    Console
+	display    *Display
 	text       *Text
 	cursor     *Cursor
 	history    *History
@@ -63,6 +64,12 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 	}
 
 	editor.console = console
+
+	editor.display = new(Display)
+	width, height := editor.console.GetSize()
+	if err := editor.display.Init(width, height, editor.cursor); err != nil {
+		return err
+	}
 
 	if config == nil {
 		return errors.New("editor: invalid config reference")
@@ -165,6 +172,9 @@ func (editor *Editor) SaveChanges() error {
 // TODO: Partial cursor position change. May cause invalid cursor state.
 // Cursor position handling function callers should backup prev position
 // in order to restore it if the operation returns an error
+//
+// TODO: After this function call the display.CursorInBoundary() function, in
+// order to check if cursor movement has changed the display content
 func (editor *Editor) moveCursorLeft() error {
 	xOffset := editor.cursor.GetOffsetX()
 	if xOffset > 0 {
@@ -204,6 +214,9 @@ func (editor *Editor) moveCursorLeft() error {
 // TODO: Partial cursor position change. May cause invalid cursor state.
 // Cursor position handling function callers should backup prev position
 // in order to restore it if the operation returns an error
+//
+// TODO: After this function call the display.CursorInBoundary() function, in
+// order to check if cursor movement has changed the display content
 func (editor *Editor) moveCursorRight() error {
 	xOffset := editor.cursor.GetOffsetX()
 
@@ -240,6 +253,9 @@ func (editor *Editor) moveCursorRight() error {
 // TODO: Partial cursor position change. May cause invalid cursor state.
 // Cursor position handling function callers should backup prev position
 // in order to restore it if the operation returns an error
+//
+// TODO: After this function call the display.CursorInBoundary() function, in
+// order to check if cursor movement has changed the display content
 func (editor *Editor) moveCursorUp() error {
 	yOffset := editor.cursor.GetOffsetY()
 	if yOffset == 0 {
@@ -277,6 +293,9 @@ func (editor *Editor) moveCursorUp() error {
 // TODO: Partial cursor position change. May cause invalid cursor state.
 // Cursor position handling function callers should backup prev position
 // in order to restore it if the operation returns an error
+//
+// TODO: After this function call the display.CursorInBoundary() function, in
+// order to check if cursor movement has changed the display content
 func (editor *Editor) moveCursorDown() error {
 	yOffset := editor.cursor.GetOffsetY()
 	if yOffset == editor.text.GetLineCount()-1 {
@@ -314,40 +333,50 @@ func (editor *Editor) moveCursorDown() error {
 // TODO: The text can be longer than the screen. The editor will require a functionality
 // to move the current visible content. The current implementation is ,,naive” and
 // does not handle screen overflow.
+//
+// The implementation of the display may solve the problem. But further tests are required
+// to verfiy all posible offset shift posibilities
 func (editor *Editor) redrawText() error {
 	if err := editor.console.Clear(); err != nil {
 		return err
 	}
 
-	initCursor := new(Cursor)
-	if err := initCursor.Init(0, 0); err != nil {
+	redrawCursor := new(Cursor)
+	if err := redrawCursor.Init(0, 0); err != nil {
 		return err
 	}
 
-	height := editor.text.GetLineCount()
-	for yIndex := 0; yIndex < height; yIndex += 1 {
-		if err := initCursor.SetOffsets(0, yIndex); err != nil {
+	tHeight := editor.text.GetLineCount()
+	xShift := editor.display.GetXOffsetShift()
+	yShift := editor.display.GetYOffsetShift()
+
+	for ytIndex := yShift; ytIndex < tHeight; ytIndex += 1 {
+		if err := redrawCursor.SetOffsetY(ytIndex); err != nil {
 			return err
 		}
 
-		width, err := editor.text.GetLineLength(initCursor)
+		tWidth, err := editor.text.GetLineLength(redrawCursor)
 		if err != nil {
 			return err
 		}
 
-		for xIndex := 0; xIndex < width; xIndex += 1 {
-			if err := initCursor.SetOffsets(xIndex, yIndex); err != nil {
+		for xtIndex := xShift; xtIndex < tWidth; xtIndex += 1 {
+			if err := redrawCursor.SetOffsetX(xtIndex); err != nil {
 				return err
 			}
 
-			char, err := editor.text.GetCharacter(initCursor)
+			char, err := editor.text.GetCharacter(redrawCursor)
 			if err != nil {
 				return err
 			}
 
-			if err := editor.console.InsertCharacter(xIndex, yIndex, char); err != nil {
+			xcIndex := xtIndex - xShift
+			ycIndex := ytIndex - yShift
+
+			if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
 				return err
 			}
+
 		}
 	}
 
