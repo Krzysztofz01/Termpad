@@ -16,15 +16,16 @@ func (display *Display) Init(width int, height int, cursor *Cursor) error {
 	display.xBoundary = 0
 	display.yBoundary = 0
 
-	if err := display.Resize(width, height); err != nil {
-		return err
-	}
-
 	if cursor == nil {
 		return errors.New("display: invalid cursor struct reference")
 	}
 
 	display.cursor = cursor
+
+	if err := display.Resize(width, height); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -45,22 +46,22 @@ func (display *Display) Resize(width int, height int) error {
 	yOffset := display.cursor.GetOffsetY()
 
 	// NOTE: Right side overflow
-	if xOffset > display.xBoundary+display.width {
+	for xOffset > display.xBoundary+display.width {
 		display.xBoundary += 1
 	}
 
 	// NOTE: Left side overflow
-	if xOffset < display.xBoundary {
+	for xOffset < display.xBoundary {
 		display.xBoundary -= 1
 	}
 
 	// NOTE: Top side overflow
-	if yOffset > display.yBoundary+display.height {
+	for yOffset > display.yBoundary+display.height {
 		display.yBoundary += 1
 	}
 
 	// NOTE: Down side overflow
-	if yOffset < display.yBoundary {
+	for yOffset < display.yBoundary {
 		display.yBoundary -= 1
 	}
 
