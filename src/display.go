@@ -12,11 +12,11 @@ type Display struct {
 }
 
 // Display structure initialization function
-func (display *Display) Init(height int, width int, cursor *Cursor) error {
+func (display *Display) Init(width int, height int, cursor *Cursor) error {
 	display.xBoundary = 0
 	display.yBoundary = 0
 
-	if err := display.Resize(height, width); err != nil {
+	if err := display.Resize(width, height); err != nil {
 		return err
 	}
 
@@ -29,7 +29,7 @@ func (display *Display) Init(height int, width int, cursor *Cursor) error {
 }
 
 // Function is used to change the size of target display and recalculate the offsets of ,,currently visible'' content
-func (display *Display) Resize(height int, width int) error {
+func (display *Display) Resize(width int, height int) error {
 	if width <= 0 {
 		return errors.New("display: invalid display width")
 	}
@@ -75,4 +75,32 @@ func (display *Display) GetXOffsetShift() int {
 // Return the y (vertical) display offset
 func (display *Display) GetYOffsetShift() int {
 	return display.yBoundary
+}
+
+// Return a bool values indicating if a redraw is required according to the curent position
+func (display *Display) CursorInBoundries() bool {
+	xOffset := display.cursor.GetOffsetX()
+	yOffset := display.cursor.GetOffsetY()
+
+	// NOTE: Right side overflow
+	if xOffset > display.xBoundary+display.width {
+		return false
+	}
+
+	// NOTE: Left side overflow
+	if xOffset < display.xBoundary {
+		return false
+	}
+
+	// NOTE: Top side overflow
+	if yOffset > display.yBoundary+display.height {
+		return false
+	}
+
+	// NOTE: Down side overflow
+	if yOffset < display.yBoundary {
+		return false
+	}
+
+	return true
 }
