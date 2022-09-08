@@ -81,11 +81,7 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 
 	editor.config = config
 
-	if err := editor.redrawText(); err != nil {
-		return err
-	}
-
-	if err := editor.console.Commit(); err != nil {
+	if err := editor.renderChanges(); err != nil {
 		return err
 	}
 
@@ -126,11 +122,7 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) err
 			return err
 		}
 
-		if err := editor.renderChanges(); err != nil {
-			return err
-		}
-
-		return nil
+		return editor.renderChanges()
 	}
 
 	var err error = nil
@@ -138,6 +130,12 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) err
 	switch event.Key {
 	case KeyEnter:
 		err = editor.handleEnterKey()
+		break
+	case KeyLeft:
+		err = editor.handleLeftArrowKey()
+		break
+	case KeyRight:
+		err = editor.handleRightArrowKey()
 		break
 	}
 
@@ -193,29 +191,28 @@ func (editor *Editor) SaveChanges() error {
 	return nil
 }
 
-// Function is handling the movement of cursor to the left in x and y axis
+// [<] Handle left arrow key. Handling the movement of the cursor to the left, considering both x and y axis
 //
 // TODO: Partial cursor position change. May cause invalid cursor state.
 // Cursor position handling function callers should backup prev position
 // in order to restore it if the operation returns an error
-//
-// TODO: After this function call the display.CursorInBoundary() function, in
-// order to check if cursor movement has changed the display content
-func (editor *Editor) moveCursorLeft() error {
+func (editor *Editor) handleLeftArrowKey() error {
 	xOffset := editor.cursor.GetOffsetX()
+	yOffset := editor.cursor.GetOffsetY()
+
 	if xOffset > 0 {
 		xOffset -= 1
-		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
+		if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
 			return err
 		}
 
 		return nil
 	}
 
-	yOffset := editor.cursor.GetOffsetY()
+	yOffset = editor.cursor.GetOffsetY()
 	if yOffset > 0 {
 		yOffset -= 1
-		if err := editor.cursor.SetOffsetY(xOffset); err != nil {
+		if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
 			return err
 		}
 
@@ -225,7 +222,7 @@ func (editor *Editor) moveCursorLeft() error {
 		}
 
 		xOffset = xLength
-		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
+		if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
 			return err
 		}
 
@@ -235,16 +232,14 @@ func (editor *Editor) moveCursorLeft() error {
 	return nil
 }
 
-// Function is handling the movement of cursor to the right in x and y axis
+// [>] Handle right arrow key. Handling the movement of the cursor to the right, considering both x and y axis
 //
 // TODO: Partial cursor position change. May cause invalid cursor state.
 // Cursor position handling function callers should backup prev position
 // in order to restore it if the operation returns an error
-//
-// TODO: After this function call the display.CursorInBoundary() function, in
-// order to check if cursor movement has changed the display content
-func (editor *Editor) moveCursorRight() error {
+func (editor *Editor) handleRightArrowKey() error {
 	xOffset := editor.cursor.GetOffsetX()
+	yOffset := editor.cursor.GetOffsetY()
 
 	lineLength, err := editor.text.GetLineLength(editor.cursor)
 	if err != nil {
@@ -253,18 +248,18 @@ func (editor *Editor) moveCursorRight() error {
 
 	if xOffset < lineLength {
 		xOffset += 1
-		if err := editor.cursor.SetOffsetY(xOffset); err != nil {
+		if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
 			return err
 		}
 
 		return nil
 	}
 
-	yOffset := editor.cursor.GetOffsetY()
+	yOffset = editor.cursor.GetOffsetY()
 	if yOffset < editor.text.GetLineCount()-1 {
 		yOffset += 1
 		xOffset = 0
-		if err := editor.cursor.SetOffsets(xOffset, yOffset); err != nil {
+		if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
 			return err
 		}
 
@@ -404,11 +399,18 @@ func (editor *Editor) setCursorPosition(xOffset int, yOffset int) error {
 }
 
 // Handle the underlying console API render. If the cursor is out of display boundary the whole screen will be rewriten
+//
+// TODO: Currently every change is redrawing the whole screen, a better appraochs is required to render only the line that
+// has changes (or lines, in case of line break/insert)
 func (editor *Editor) renderChanges() error {
-	if !editor.display.CursorInBoundries() {
-		if err := editor.redrawText(); err != nil {
-			return err
-		}
+	// if !editor.display.CursorInBoundries() {
+	// 	if err := editor.redrawText(); err != nil {
+	// 		return err
+	// 	}
+	// }
+
+	if err := editor.redrawText(); err != nil {
+		return err
 	}
 
 	return editor.console.Commit()
