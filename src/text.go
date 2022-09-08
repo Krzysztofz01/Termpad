@@ -52,10 +52,8 @@ func (text *Text) GetLineCount() int {
 	return len(text.lines)
 }
 
-// Return the lenght of the line based on given cursor position
-func (text *Text) GetLineLength(cursor *Cursor) (int, error) {
-	yOffset := cursor.GetOffsetY()
-
+// Return the length of the line based on given y (vertical) offset
+func (text *Text) GetLineLengthByOffset(yOffset int) (int, error) {
 	if yOffset < 0 {
 		return 0, errors.New("text: invalid y (vertical) negative offset requested to get")
 	}
@@ -66,6 +64,11 @@ func (text *Text) GetLineLength(cursor *Cursor) (int, error) {
 
 	targetLine := text.lines[yOffset]
 	return targetLine.GetBufferLength(), nil
+}
+
+// Return the length of the line based on given cursor position
+func (text *Text) GetLineLengthByCursor(cursor *Cursor) (int, error) {
+	return text.GetLineLengthByOffset(cursor.GetOffsetY())
 }
 
 // Place a given character inside specific line at specific offset given by the cursor position
@@ -204,10 +207,8 @@ func (text *Text) appendLinesAtIndex(line *Line, index int) error {
 	return nil
 }
 
-// Return a character based on the line and offset specified by the given cursor position
-func (text *Text) GetCharacter(cursor *Cursor) (rune, error) {
-	yOffset := cursor.GetOffsetY()
-
+// Return a character based on the given x (horizontal) and y (vertical) offsets
+func (text *Text) GetCharacterByOffsets(xOffset int, yOffset int) (rune, error) {
 	if yOffset < 0 {
 		return 0, errors.New("text: invalid y (vertical) negative offset requested to get")
 	}
@@ -218,12 +219,17 @@ func (text *Text) GetCharacter(cursor *Cursor) (rune, error) {
 
 	targetLine := text.lines[yOffset]
 
-	char, err := targetLine.GetBufferCharacter(cursor)
+	char, err := targetLine.GetBufferCharacterByOffset(xOffset)
 	if err != nil {
 		return 0, err
 	}
 
 	return char, nil
+}
+
+// Return a character based on the x (horizontal) and y (vertical) specified by the given cursor
+func (text *Text) GetCharacterByCursor(cursor *Cursor) (rune, error) {
+	return text.GetCharacterByOffsets(cursor.GetOffsetX(), cursor.GetOffsetY())
 }
 
 // Return the text in form of single string
