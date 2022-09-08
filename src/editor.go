@@ -44,6 +44,12 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 		fileTextContent = string(fileData)
 	}
 
+	if console == nil {
+		return errors.New("editor: invalid internal console api contract implementation")
+	}
+
+	editor.console = console
+
 	editor.text = new(Text)
 	if err := editor.text.Init(fileTextContent, !editor.fileExists); err != nil {
 		return err
@@ -54,16 +60,14 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 		return err
 	}
 
+	if err := editor.setCursorPosition(0, 0); err != nil {
+		return err
+	}
+
 	editor.history = new(History)
 	if err := editor.history.Init(); err != nil {
 		return err
 	}
-
-	if console == nil {
-		return errors.New("editor: invalid internal console api contract implementation")
-	}
-
-	editor.console = console
 
 	editor.display = new(Display)
 	width, height := editor.console.GetSize()
@@ -90,40 +94,47 @@ func (editor *Editor) Start() error {
 		ev := editor.console.WatchConsoleEvent()
 		switch event := ev.(type) {
 		case ConsoleEventKeyPress:
-			{
-				if event.Key == KeyPrintable {
-					if err := editor.handleNamedPrintableKey(event); err != nil {
-						// TODO: Handle error
-					}
-				}
-
-				if err := editor.handleNamedKey(event); err != nil {
-					// TODO: Handle error
-				}
-			}
+			// TODO: Handle returned error. Different bahaviour for critical and non-fatal errors
+			editor.handleConsoleEventKeyPress(event)
 			break
 
 		case ConsoleEventResize:
-			{
-				// TODO: Check if cursor is on screen to prevent redundant full content redraws
-				if err := editor.redrawText(); err != nil {
-					// TODO: Handle error
-				}
-			}
+			// TODO: Handle returned error. Different bahaviour for critical and non-fatal errors
+			editor.handleConsoleEventResize(event)
 			break
 		}
 	}
 
-	return errors.New("editor: not implemented")
+	return nil
 }
 
-func (editor *Editor) handleNamedPrintableKey(event ConsoleEventKeyPress) error {
-	// TODO: Implement
-	return errors.New("editor: not implemented")
+// Handling function for the ConsoleEventKeyPress console event
+func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) error {
+	if event.Key == KeyPrintable {
+		if err := editor.insertCharacter(event.Char); err != nil {
+			return err
+		}
+
+		targetXOffset := editor.cursor.GetOffsetX() + 1
+		targetYOffset := editor.cursor.GetOffsetY()
+
+		if err := editor.setCursorPosition(targetXOffset, targetYOffset); err != nil {
+			return err
+		}
+
+		if err := editor.renderChanges(); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// NOTE: Dev
+	return nil
 }
 
-func (editor *Editor) handleNamedKey(event ConsoleEventKeyPress) error {
-	// TODO: Implement
+// Handling function for the ConsoleEventResize console event
+func (editor *Editor) handleConsoleEventResize(event ConsoleEventResize) error {
 	return errors.New("editor: not implemented")
 }
 
@@ -328,7 +339,51 @@ func (editor *Editor) moveCursorDown() error {
 	return nil
 }
 
-// Funcation is rendering all the text to the screen
+// Handle printable character insertion. This function is handling both text structure and underlying console API
+func (editor *Editor) insertCharacter(char rune) error {
+	if err := editor.text.InsertCharacter(char, editor.cursor); err != nil {
+		return err
+	}
+
+	xcIndex := editor.cursor.GetOffsetX() - editor.display.GetXOffsetShift()
+	ycIndex := editor.cursor.GetOffsetY() - editor.display.GetYOffsetShift()
+
+	if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Handle cursor position change. This funcation is handling both the cursor struct and the underlying console API
+func (editor *Editor) setCursorPosition(xOffset int, yOffset int) error {
+	if err := editor.cursor.SetOffsets(xOffset, yOffset); err != nil {
+		return err
+	}
+
+	if err := editor.console.SetCursorPosition(xOffset, yOffset); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Handle the underlying console API render. If the cursor is out of display boundary the whole screen will be rewriten
+func (editor *Editor) renderChanges() error {
+	if editor.display.CursorInBoundries() {
+		if err := editor.console.Commit(); err != nil {
+			return err
+		}
+	} else {
+		if err := editor.redrawText(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Function is clearing, rewriting and commiting changes to the underlying console API screen, according to the display boundaries
 //
 // TODO: The text can be longer than the screen. The editor will require a functionality
 // to move the current visible content. The current implementation is ,,naive” and
