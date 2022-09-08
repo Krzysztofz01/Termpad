@@ -85,6 +85,10 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 		return err
 	}
 
+	if err := editor.console.Commit(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -129,8 +133,19 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) err
 		return nil
 	}
 
-	// NOTE: Dev
-	return nil
+	var err error = nil
+
+	switch event.Key {
+	case KeyEnter:
+		err = editor.handleEnterKey()
+		break
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return editor.renderChanges()
 }
 
 // Handling function for the ConsoleEventResize console event
@@ -339,6 +354,26 @@ func (editor *Editor) moveCursorDown() error {
 	return nil
 }
 
+// [Enter] Handle line breaking via the enter key.
+func (editor *Editor) handleEnterKey() error {
+	if err := editor.text.InsertLine(editor.cursor); err != nil {
+		return err
+	}
+
+	// FIXME: Here is a posiblity for implementing a more efficient render. But this is working for now
+	if err := editor.redrawText(); err != nil {
+		return err
+	}
+
+	targetXOffset := 0
+	targetYOffset := editor.cursor.GetOffsetY() + 1
+	if err := editor.setCursorPosition(targetXOffset, targetYOffset); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Handle printable character insertion. This function is handling both text structure and underlying console API
 func (editor *Editor) insertCharacter(char rune) error {
 	if err := editor.text.InsertCharacter(char, editor.cursor); err != nil {
@@ -370,20 +405,16 @@ func (editor *Editor) setCursorPosition(xOffset int, yOffset int) error {
 
 // Handle the underlying console API render. If the cursor is out of display boundary the whole screen will be rewriten
 func (editor *Editor) renderChanges() error {
-	if editor.display.CursorInBoundries() {
-		if err := editor.console.Commit(); err != nil {
-			return err
-		}
-	} else {
+	if !editor.display.CursorInBoundries() {
 		if err := editor.redrawText(); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return editor.console.Commit()
 }
 
-// Function is clearing, rewriting and commiting changes to the underlying console API screen, according to the display boundaries
+// Function is clearing and rewriting changes to the underlying console API screen, according to the display boundaries
 //
 // TODO: The text can be longer than the screen. The editor will require a functionality
 // to move the current visible content. The current implementation is ,,naive” and
@@ -431,9 +462,8 @@ func (editor *Editor) redrawText() error {
 			if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
 				return err
 			}
-
 		}
 	}
 
-	return editor.console.Commit()
+	return nil
 }
