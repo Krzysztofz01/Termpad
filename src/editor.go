@@ -6,6 +6,8 @@ import (
 	"runtime"
 )
 
+// TODO: Remove all redundant underlying console API cursor overrides. The updated console-dependent cursor implementation
+// is applying all the changes to the underlying console API
 // TODO: Move key handler to helper struct
 // TODO: Better wrapper approach for keeping sync during operation on both internal and console API components
 
@@ -59,7 +61,7 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 	}
 
 	editor.cursor = new(Cursor)
-	if err := editor.cursor.Init(0, 0); err != nil {
+	if err := editor.cursor.Init(0, 0, console); err != nil {
 		return err
 	}
 
@@ -231,7 +233,7 @@ func (editor *Editor) handleLeftArrowKey() error {
 			return err
 		}
 
-		xLength, err := editor.text.GetLineLength(editor.cursor)
+		xLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
 		if err != nil {
 			return err
 		}
@@ -256,7 +258,7 @@ func (editor *Editor) handleRightArrowKey() error {
 	xOffset := editor.cursor.GetOffsetX()
 	yOffset := editor.cursor.GetOffsetY()
 
-	lineLength, err := editor.text.GetLineLength(editor.cursor)
+	lineLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
 	if err != nil {
 		return err
 	}
@@ -300,7 +302,7 @@ func (editor *Editor) handleUpArrowKey() error {
 	}
 
 	yOffset -= 1
-	currentXLength, err := editor.text.GetLineLength(editor.cursor)
+	currentXLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
 	if err != nil {
 		return err
 	}
@@ -309,7 +311,7 @@ func (editor *Editor) handleUpArrowKey() error {
 		return err
 	}
 
-	targetXLength, err := editor.text.GetLineLength(editor.cursor)
+	targetXLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
 	if err != nil {
 		return err
 	}
@@ -341,7 +343,7 @@ func (editor *Editor) handleDownArrowKey() error {
 	}
 
 	yOffset += 1
-	currentXLength, err := editor.text.GetLineLength(editor.cursor)
+	currentXLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
 	if err != nil {
 		return err
 	}
@@ -350,7 +352,7 @@ func (editor *Editor) handleDownArrowKey() error {
 		return err
 	}
 
-	targetXLength, err := editor.text.GetLineLength(editor.cursor)
+	targetXLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
 	if err != nil {
 		return err
 	}
@@ -446,31 +448,18 @@ func (editor *Editor) redrawText() error {
 		return err
 	}
 
-	redrawCursor := new(Cursor)
-	if err := redrawCursor.Init(0, 0); err != nil {
-		return err
-	}
-
 	tHeight := editor.text.GetLineCount()
 	xShift := editor.display.GetXOffsetShift()
 	yShift := editor.display.GetYOffsetShift()
 
 	for ytIndex := yShift; ytIndex < tHeight; ytIndex += 1 {
-		if err := redrawCursor.SetOffsetY(ytIndex); err != nil {
-			return err
-		}
-
-		tWidth, err := editor.text.GetLineLength(redrawCursor)
+		tWidth, err := editor.text.GetLineLengthByOffset(ytIndex)
 		if err != nil {
 			return err
 		}
 
 		for xtIndex := xShift; xtIndex < tWidth; xtIndex += 1 {
-			if err := redrawCursor.SetOffsetX(xtIndex); err != nil {
-				return err
-			}
-
-			char, err := editor.text.GetCharacter(redrawCursor)
+			char, err := editor.text.GetCharacterByOffsets(xtIndex, ytIndex)
 			if err != nil {
 				return err
 			}
