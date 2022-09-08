@@ -87,9 +87,8 @@ func (line *Line) RemoveBufferCharacter(cursor *Cursor) error {
 	return nil
 }
 
-// Return the rune at the position specified by the given cursor
-func (line *Line) GetBufferCharacter(cursor *Cursor) (rune, error) {
-	xOffset := cursor.GetOffsetX()
+// Return the rune at the position specified by the given offset
+func (line *Line) GetBufferCharacterByOffset(xOffset int) (rune, error) {
 	if xOffset < 0 {
 		return 0, errors.New("line: invalid x (horizontal) negative offset requested to get")
 	}
@@ -100,4 +99,9 @@ func (line *Line) GetBufferCharacter(cursor *Cursor) (rune, error) {
 
 	targetChar := line.buffer[xOffset]
 	return targetChar, nil
+}
+
+// Return the rune at the position specified by the given cursor
+func (line *Line) GetBufferCharacterByCursor(cursor *Cursor) (rune, error) {
+	return line.GetBufferCharacterByOffset(cursor.GetOffsetX())
 }
