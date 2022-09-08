@@ -63,6 +63,10 @@ const (
 	KeyDelete
 	KeyPause
 	KeyBacktab
+	KeyEnter
+	KeyTab
+	KeyEscape
+	KeyBackspace
 	KeyF1
 	KeyF2
 	KeyF3

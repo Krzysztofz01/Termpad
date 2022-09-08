@@ -149,12 +149,20 @@ func (console *ConsoleTcell) translateNamedKey(key tcell.Key) NamedKey {
 		return KeyEnd
 	case tcell.KeyInsert:
 		return KeyInsert
-	case tcell.KeyDelete:
+	case tcell.KeyDEL:
 		return KeyDelete
 	case tcell.KeyPause:
 		return KeyPause
 	case tcell.KeyBacktab:
 		return KeyBacktab
+	case tcell.KeyCR:
+		return KeyEnter
+	case tcell.KeyTAB:
+		return KeyTab
+	case tcell.KeyESC:
+		return KeyEscape
+	case tcell.KeyBS:
+		return KeyBackspace
 	case tcell.KeyF1:
 		return KeyF1
 	case tcell.KeyF2:
