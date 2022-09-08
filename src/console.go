@@ -8,6 +8,9 @@ type Console interface {
 	// Remove a given character at given console position
 	RemoveCharacter(xIndex int, yIndex int) error
 
+	// Set the console cursor at given console position
+	SetCursorPosition(xIndex int, yIndex int) error
+
 	// Apply pending changes to render on the console
 	Commit() error
 

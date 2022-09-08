@@ -31,6 +31,7 @@ func CreateConsole() (Console, error) {
 	// screen.SetStyle(style)
 
 	screen.DisableMouse()
+	screen.ShowCursor(0, 0)
 
 	return &ConsoleTcell{
 		screen: screen,
@@ -60,6 +61,11 @@ func (console *ConsoleTcell) RemoveCharacter(xIndex int, yIndex int) error {
 	}
 
 	console.screen.SetContent(xIndex, yIndex, 0, nil, tcell.StyleDefault)
+	return nil
+}
+
+func (console *ConsoleTcell) SetCursorPosition(xIndex int, yIndex int) error {
+	console.screen.ShowCursor(xIndex, yIndex)
 	return nil
 }
 
