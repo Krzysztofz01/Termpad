@@ -137,6 +137,11 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) err
 	case KeyRight:
 		err = editor.handleRightArrowKey()
 		break
+	case KeyUp:
+		err = editor.handleUpArrowKey()
+		break
+	case KeyDown:
+		err = editor.handleDownArrowKey()
 	}
 
 	if err != nil {
@@ -269,16 +274,17 @@ func (editor *Editor) handleRightArrowKey() error {
 	return nil
 }
 
-// Function is handling the movement of cursor to the line above in x and y axis
+// [/\] Handle up arrow key. Handling the movement of the cursor to the line above, considering both y and x axis
 //
 // TODO: Partial cursor position change. May cause invalid cursor state.
 // Cursor position handling function callers should backup prev position
 // in order to restore it if the operation returns an error
 //
-// TODO: After this function call the display.CursorInBoundary() function, in
-// order to check if cursor movement has changed the display content
-func (editor *Editor) moveCursorUp() error {
+// FIXME: Sometimes the cursor is moving to the end of the line after beeing on a shorter one
+func (editor *Editor) handleUpArrowKey() error {
+	xOffset := editor.cursor.GetOffsetX()
 	yOffset := editor.cursor.GetOffsetY()
+
 	if yOffset == 0 {
 		return nil
 	}
@@ -289,7 +295,7 @@ func (editor *Editor) moveCursorUp() error {
 		return err
 	}
 
-	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
+	if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
 		return err
 	}
 
@@ -299,7 +305,7 @@ func (editor *Editor) moveCursorUp() error {
 	}
 
 	if targetXLength < currentXLength {
-		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
+		if err := editor.setCursorPosition(targetXLength, yOffset); err != nil {
 			return err
 		}
 
@@ -309,16 +315,17 @@ func (editor *Editor) moveCursorUp() error {
 	return nil
 }
 
-// Function is handling the movement of cursor to the line below in x and y axis
+// [\/] Handle down arrow key. Handling the movement of the cursor to the line below, considering both y and x axis
 //
 // TODO: Partial cursor position change. May cause invalid cursor state.
 // Cursor position handling function callers should backup prev position
 // in order to restore it if the operation returns an error
 //
-// TODO: After this function call the display.CursorInBoundary() function, in
-// order to check if cursor movement has changed the display content
-func (editor *Editor) moveCursorDown() error {
+// FIXME: Sometimes the cursor is moving to the end of the line after beeing on a shorter one
+func (editor *Editor) handleDownArrowKey() error {
+	xOffset := editor.cursor.GetOffsetX()
 	yOffset := editor.cursor.GetOffsetY()
+
 	if yOffset == editor.text.GetLineCount()-1 {
 		return nil
 	}
@@ -329,7 +336,7 @@ func (editor *Editor) moveCursorDown() error {
 		return err
 	}
 
-	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
+	if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
 		return err
 	}
 
@@ -339,7 +346,7 @@ func (editor *Editor) moveCursorDown() error {
 	}
 
 	if targetXLength < currentXLength {
-		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
+		if err := editor.setCursorPosition(targetXLength, yOffset); err != nil {
 			return err
 		}
 
