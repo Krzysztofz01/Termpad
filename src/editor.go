@@ -6,6 +6,9 @@ import (
 	"runtime"
 )
 
+// TODO: Move key handler to helper struct
+// TODO: Better wrapper approach for keeping sync during operation on both internal and console API components
+
 // Structure representing the editor instance which is a warapper for text I/O
 type Editor struct {
 	filePath   string
@@ -93,38 +96,44 @@ func (editor *Editor) Start() error {
 	for {
 		ev := editor.console.WatchConsoleEvent()
 		switch event := ev.(type) {
+
 		case ConsoleEventKeyPress:
-			// TODO: Handle returned error. Different bahaviour for critical and non-fatal errors
-			editor.handleConsoleEventKeyPress(event)
-			break
+			{
+				editorBreak, err := editor.handleConsoleEventKeyPress(event)
+				if err != nil || editorBreak {
+					return err
+				}
+			}
 
 		case ConsoleEventResize:
-			// TODO: Handle returned error. Different bahaviour for critical and non-fatal errors
-			editor.handleConsoleEventResize(event)
-			break
+			{
+				editorBreak, err := editor.handleConsoleEventResize(event)
+				if err != nil || editorBreak {
+					return err
+				}
+			}
 		}
 	}
-
-	return nil
 }
 
-// Handling function for the ConsoleEventKeyPress console event
-func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) error {
+// Handling function for the ConsoleEventKeyPress console event. The funcation returns a bool value indicating if the editor loop should be broken
+func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bool, error) {
 	if event.Key == KeyPrintable {
 		if err := editor.insertCharacter(event.Char); err != nil {
-			return err
+			return false, err
 		}
 
 		targetXOffset := editor.cursor.GetOffsetX() + 1
 		targetYOffset := editor.cursor.GetOffsetY()
 
 		if err := editor.setCursorPosition(targetXOffset, targetYOffset); err != nil {
-			return err
+			return false, err
 		}
 
-		return editor.renderChanges()
+		return false, editor.renderChanges()
 	}
 
+	var breakEditorLoop bool = false
 	var err error = nil
 
 	switch event.Key {
@@ -145,15 +154,15 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) err
 	}
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return editor.renderChanges()
+	return breakEditorLoop, editor.renderChanges()
 }
 
-// Handling function for the ConsoleEventResize console event
-func (editor *Editor) handleConsoleEventResize(event ConsoleEventResize) error {
-	return errors.New("editor: not implemented")
+// Handling function for the ConsoleEventResize console event. The funcation returns a bool value indicating if the editor loop should be broken
+func (editor *Editor) handleConsoleEventResize(event ConsoleEventResize) (bool, error) {
+	return false, errors.New("editor: not implemented")
 }
 
 // Generate string from text structure and create or truncate target file
