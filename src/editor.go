@@ -162,7 +162,8 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 
 // Handling function for the ConsoleEventResize console event. The funcation returns a bool value indicating if the editor loop should be broken
 func (editor *Editor) handleConsoleEventResize(event ConsoleEventResize) (bool, error) {
-	return false, errors.New("editor: not implemented")
+	// TODO: Implement some checks to verify if the redraw is even required
+	return false, editor.renderChanges()
 }
 
 // Generate string from text structure and create or truncate target file
