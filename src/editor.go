@@ -6,6 +6,7 @@ import (
 	"runtime"
 )
 
+// TODO: Verify if the cursor can be out of display now, when it is wrapping the console API
 // TODO: Move key handler to helper struct
 // TODO: Better wrapper approach for keeping sync during operation on both internal and console API components
 
@@ -80,6 +81,7 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 
 	editor.config = config
 
+	// TODO: This will change after implementation of all redrawing and rendering functions
 	if err := editor.renderChanges(); err != nil {
 		return err
 	}
@@ -202,6 +204,7 @@ func (editor *Editor) SaveChanges() error {
 //
 // TODO: Currently every change is redrawing the whole screen, a better appraochs is required to render only the line that
 // has changes (or lines, in case of line break/insert)
+// FIXME: This funcation should not call any drawing funcation. It should only pass changes to underling API
 func (editor *Editor) renderChanges() error {
 	// if !editor.display.CursorInBoundries() {
 	// 	if err := editor.redrawText(); err != nil {
@@ -209,14 +212,14 @@ func (editor *Editor) renderChanges() error {
 	// 	}
 	// }
 
-	if err := editor.redrawText(); err != nil {
+	if err := editor.redrawFull(); err != nil {
 		return err
 	}
 
 	return editor.console.Commit()
 }
 
-// Function is clearing and rewriting changes to the underlying console API screen, according to the display boundaries
+// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines are affected
 //
 // TODO: The text can be longer than the screen. The editor will require a functionality
 // to move the current visible content. The current implementation is ,,naive” and
@@ -224,7 +227,7 @@ func (editor *Editor) renderChanges() error {
 //
 // The implementation of the display may solve the problem. But further tests are required
 // to verfiy all posible offset shift posibilities
-func (editor *Editor) redrawText() error {
+func (editor *Editor) redrawFull() error {
 	if err := editor.console.Clear(); err != nil {
 		return err
 	}
@@ -255,6 +258,45 @@ func (editor *Editor) redrawText() error {
 	}
 
 	return nil
+}
+
+// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. Only the line specified by the cursor is affected.
+// TODO: Verify if the y (vertical) offset is correclty calculated
+// TODO: Implement full redraw fallback after resolving TODO:9
+func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
+	yOffset := editor.cursor.GetOffsetY()
+
+	tWidth, err := editor.text.GetLineLengthByOffset(yOffset)
+	if err != nil {
+		return err
+	}
+
+	xShift := editor.display.GetXOffsetShift()
+	ycIndex := yOffset - editor.display.GetYOffsetShift()
+
+	for xtIndex := xShift; xtIndex < tWidth; xtIndex += 1 {
+		char, err := editor.text.GetCharacterByOffsets(xtIndex, yOffset)
+		if err != nil {
+			return err
+		}
+
+		xcIndex := xtIndex - xShift
+
+		if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines (including the current) below the cursor are affected.
+// TODO: Implement full redraw fallback after resolving TODO:9
+func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
+	// NOTE: Perform loop starting from the current y index
+	// NOTE: Dont loop x in range of line length, but in display width
+	// NOTE: Fill with rune until line end, than fill with spaces (this is how clear works)
+	return errors.New("editor: not implemeneted")
 }
 
 // NOTE: This section contains all the key-specific handler functions
@@ -406,8 +448,8 @@ func (editor *Editor) handleKeyEnter() error {
 		return err
 	}
 
-	// FIXME: Here is a posiblity for implementing a more efficient render. But this is working for now
-	if err := editor.redrawText(); err != nil {
+	// FIXME: Here is a posiblity for implementing a more efficient render. But this is working for now. Use redrawLine()
+	if err := editor.redrawFull(); err != nil {
 		return err
 	}
 
