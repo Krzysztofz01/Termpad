@@ -115,7 +115,7 @@ func (editor *Editor) Start() error {
 // Handling function for the ConsoleEventKeyPress console event. The funcation returns a bool value indicating if the editor loop should be broken
 func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bool, error) {
 	if event.Key == KeyPrintable {
-		if err := editor.insertCharacter(event.Char); err != nil {
+		if err := editor.handleKeyPrintableCharacter(event.Char); err != nil {
 			return false, err
 		}
 
@@ -132,19 +132,17 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 
 	switch event.Key {
 	case KeyEnter:
-		err = editor.handleEnterKey()
-		break
+		err = editor.handleKeyEnter()
 	case KeyLeft:
-		err = editor.handleLeftArrowKey()
-		break
+		err = editor.handleKeyLeftArrow()
 	case KeyRight:
-		err = editor.handleRightArrowKey()
-		break
+		err = editor.handleKeyRightArrow()
 	case KeyUp:
-		err = editor.handleUpArrowKey()
-		break
+		err = editor.handleKeyUpArrow()
 	case KeyDown:
-		err = editor.handleDownArrowKey()
+		err = editor.handleKeyDownArrow()
+	default:
+		err = errors.New("editor: can not handle given input")
 	}
 
 	if err != nil {
@@ -195,183 +193,6 @@ func (editor *Editor) SaveChanges() error {
 
 	if !editor.fileExists {
 		editor.fileExists = true
-	}
-
-	return nil
-}
-
-// [<] Handle left arrow key. Handling the movement of the cursor to the left, considering both x and y axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
-func (editor *Editor) handleLeftArrowKey() error {
-	xOffset := editor.cursor.GetOffsetX()
-	if xOffset > 0 {
-		xOffset -= 1
-		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	yOffset := editor.cursor.GetOffsetY()
-	if yOffset > 0 {
-		yOffset -= 1
-		if err := editor.cursor.SetOffsetY(yOffset); err != nil {
-			return err
-		}
-
-		xLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
-		if err != nil {
-			return err
-		}
-
-		xOffset = xLength
-		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	return nil
-}
-
-// [>] Handle right arrow key. Handling the movement of the cursor to the right, considering both x and y axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
-func (editor *Editor) handleRightArrowKey() error {
-	xOffset := editor.cursor.GetOffsetX()
-
-	lineLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
-	if err != nil {
-		return err
-	}
-
-	if xOffset < lineLength {
-		xOffset += 1
-		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	yOffset := editor.cursor.GetOffsetY()
-	if yOffset < editor.text.GetLineCount()-1 {
-		yOffset += 1
-		xOffset = 0
-		if err := editor.cursor.SetOffsets(xOffset, yOffset); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	return nil
-}
-
-// [/\] Handle up arrow key. Handling the movement of the cursor to the line above, considering both y and x axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
-func (editor *Editor) handleUpArrowKey() error {
-	yOffset := editor.cursor.GetOffsetY()
-	if yOffset == 0 {
-		return nil
-	}
-
-	yOffset -= 1
-	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
-		return err
-	}
-
-	targetXLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
-	if err != nil {
-		return err
-	}
-
-	xOffset := editor.cursor.GetOffsetX()
-	if xOffset >= targetXLength {
-		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	return nil
-}
-
-// [\/] Handle down arrow key. Handling the movement of the cursor to the line below, considering both y and x axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
-func (editor *Editor) handleDownArrowKey() error {
-	yOffset := editor.cursor.GetOffsetY()
-	if yOffset == editor.text.GetLineCount()-1 {
-		return nil
-	}
-
-	yOffset += 1
-	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
-		return err
-	}
-
-	targetXLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
-	if err != nil {
-		return err
-	}
-
-	xOffset := editor.cursor.GetOffsetX()
-	if xOffset >= targetXLength {
-		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
-			return err
-		}
-
-		return nil
-	}
-
-	return nil
-}
-
-// [Enter] Handle line breaking via the enter key.
-func (editor *Editor) handleEnterKey() error {
-	if err := editor.text.InsertLine(editor.cursor); err != nil {
-		return err
-	}
-
-	// FIXME: Here is a posiblity for implementing a more efficient render. But this is working for now
-	if err := editor.redrawText(); err != nil {
-		return err
-	}
-
-	targetXOffset := 0
-	targetYOffset := editor.cursor.GetOffsetY() + 1
-	if err := editor.cursor.SetOffsets(targetXOffset, targetYOffset); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Handle printable character insertion. This function is handling both text structure and underlying console API
-func (editor *Editor) insertCharacter(char rune) error {
-	if err := editor.text.InsertCharacter(char, editor.cursor); err != nil {
-		return err
-	}
-
-	xcIndex := editor.cursor.GetOffsetX() - editor.display.GetXOffsetShift()
-	ycIndex := editor.cursor.GetOffsetY() - editor.display.GetYOffsetShift()
-
-	if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
-		return err
 	}
 
 	return nil
@@ -431,6 +252,185 @@ func (editor *Editor) redrawText() error {
 				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+// NOTE: This section contains all the key-specific handler functions
+
+// [<] Handle left arrow key. Handling the movement of the cursor to the left, considering both x and y axis
+//
+// TODO: Partial cursor position change. May cause invalid cursor state.
+// Cursor position handling function callers should backup prev position
+// in order to restore it if the operation returns an error
+func (editor *Editor) handleKeyLeftArrow() error {
+	xOffset := editor.cursor.GetOffsetX()
+	if xOffset > 0 {
+		xOffset -= 1
+		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	yOffset := editor.cursor.GetOffsetY()
+	if yOffset > 0 {
+		yOffset -= 1
+		if err := editor.cursor.SetOffsetY(yOffset); err != nil {
+			return err
+		}
+
+		xLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
+		if err != nil {
+			return err
+		}
+
+		xOffset = xLength
+		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
+// [>] Handle right arrow key. Handling the movement of the cursor to the right, considering both x and y axis
+//
+// TODO: Partial cursor position change. May cause invalid cursor state.
+// Cursor position handling function callers should backup prev position
+// in order to restore it if the operation returns an error
+func (editor *Editor) handleKeyRightArrow() error {
+	xOffset := editor.cursor.GetOffsetX()
+
+	lineLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
+	if err != nil {
+		return err
+	}
+
+	if xOffset < lineLength {
+		xOffset += 1
+		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	yOffset := editor.cursor.GetOffsetY()
+	if yOffset < editor.text.GetLineCount()-1 {
+		yOffset += 1
+		xOffset = 0
+		if err := editor.cursor.SetOffsets(xOffset, yOffset); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
+// [/\] Handle up arrow key. Handling the movement of the cursor to the line above, considering both y and x axis
+//
+// TODO: Partial cursor position change. May cause invalid cursor state.
+// Cursor position handling function callers should backup prev position
+// in order to restore it if the operation returns an error
+func (editor *Editor) handleKeyUpArrow() error {
+	yOffset := editor.cursor.GetOffsetY()
+	if yOffset == 0 {
+		return nil
+	}
+
+	yOffset -= 1
+	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
+		return err
+	}
+
+	targetXLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
+	if err != nil {
+		return err
+	}
+
+	xOffset := editor.cursor.GetOffsetX()
+	if xOffset >= targetXLength {
+		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
+// [\/] Handle down arrow key. Handling the movement of the cursor to the line below, considering both y and x axis
+//
+// TODO: Partial cursor position change. May cause invalid cursor state.
+// Cursor position handling function callers should backup prev position
+// in order to restore it if the operation returns an error
+func (editor *Editor) handleKeyDownArrow() error {
+	yOffset := editor.cursor.GetOffsetY()
+	if yOffset == editor.text.GetLineCount()-1 {
+		return nil
+	}
+
+	yOffset += 1
+	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
+		return err
+	}
+
+	targetXLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
+	if err != nil {
+		return err
+	}
+
+	xOffset := editor.cursor.GetOffsetX()
+	if xOffset >= targetXLength {
+		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
+// [Enter] Handle line breaking via the enter key.
+func (editor *Editor) handleKeyEnter() error {
+	if err := editor.text.InsertLine(editor.cursor); err != nil {
+		return err
+	}
+
+	// FIXME: Here is a posiblity for implementing a more efficient render. But this is working for now
+	if err := editor.redrawText(); err != nil {
+		return err
+	}
+
+	targetXOffset := 0
+	targetYOffset := editor.cursor.GetOffsetY() + 1
+	if err := editor.cursor.SetOffsets(targetXOffset, targetYOffset); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// [ASCII 0x20 - 0x7E] Handle printable character insertion.
+func (editor *Editor) handleKeyPrintableCharacter(char rune) error {
+	if err := editor.text.InsertCharacter(char, editor.cursor); err != nil {
+		return err
+	}
+
+	xcIndex := editor.cursor.GetOffsetX() - editor.display.GetXOffsetShift()
+	ycIndex := editor.cursor.GetOffsetY() - editor.display.GetYOffsetShift()
+
+	if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
+		return err
 	}
 
 	return nil
