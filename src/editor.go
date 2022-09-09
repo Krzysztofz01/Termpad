@@ -6,8 +6,6 @@ import (
 	"runtime"
 )
 
-// TODO: Remove all redundant underlying console API cursor overrides. The updated console-dependent cursor implementation
-// is applying all the changes to the underlying console API
 // TODO: Move key handler to helper struct
 // TODO: Better wrapper approach for keeping sync during operation on both internal and console API components
 
@@ -62,10 +60,6 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 
 	editor.cursor = new(Cursor)
 	if err := editor.cursor.Init(0, 0, console); err != nil {
-		return err
-	}
-
-	if err := editor.setCursorPosition(0, 0); err != nil {
 		return err
 	}
 
@@ -125,10 +119,8 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 			return false, err
 		}
 
-		targetXOffset := editor.cursor.GetOffsetX() + 1
-		targetYOffset := editor.cursor.GetOffsetY()
-
-		if err := editor.setCursorPosition(targetXOffset, targetYOffset); err != nil {
+		xOffset := editor.cursor.GetOffsetX() + 1
+		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
 			return false, err
 		}
 
@@ -215,21 +207,19 @@ func (editor *Editor) SaveChanges() error {
 // in order to restore it if the operation returns an error
 func (editor *Editor) handleLeftArrowKey() error {
 	xOffset := editor.cursor.GetOffsetX()
-	yOffset := editor.cursor.GetOffsetY()
-
 	if xOffset > 0 {
 		xOffset -= 1
-		if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
+		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
 			return err
 		}
 
 		return nil
 	}
 
-	yOffset = editor.cursor.GetOffsetY()
+	yOffset := editor.cursor.GetOffsetY()
 	if yOffset > 0 {
 		yOffset -= 1
-		if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
+		if err := editor.cursor.SetOffsetY(yOffset); err != nil {
 			return err
 		}
 
@@ -239,7 +229,7 @@ func (editor *Editor) handleLeftArrowKey() error {
 		}
 
 		xOffset = xLength
-		if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
+		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
 			return err
 		}
 
@@ -256,7 +246,6 @@ func (editor *Editor) handleLeftArrowKey() error {
 // in order to restore it if the operation returns an error
 func (editor *Editor) handleRightArrowKey() error {
 	xOffset := editor.cursor.GetOffsetX()
-	yOffset := editor.cursor.GetOffsetY()
 
 	lineLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
 	if err != nil {
@@ -265,18 +254,18 @@ func (editor *Editor) handleRightArrowKey() error {
 
 	if xOffset < lineLength {
 		xOffset += 1
-		if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
+		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
 			return err
 		}
 
 		return nil
 	}
 
-	yOffset = editor.cursor.GetOffsetY()
+	yOffset := editor.cursor.GetOffsetY()
 	if yOffset < editor.text.GetLineCount()-1 {
 		yOffset += 1
 		xOffset = 0
-		if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
+		if err := editor.cursor.SetOffsets(xOffset, yOffset); err != nil {
 			return err
 		}
 
@@ -294,9 +283,7 @@ func (editor *Editor) handleRightArrowKey() error {
 //
 // FIXME: Sometimes the cursor is moving to the end of the line after beeing on a shorter one
 func (editor *Editor) handleUpArrowKey() error {
-	xOffset := editor.cursor.GetOffsetX()
 	yOffset := editor.cursor.GetOffsetY()
-
 	if yOffset == 0 {
 		return nil
 	}
@@ -307,7 +294,7 @@ func (editor *Editor) handleUpArrowKey() error {
 		return err
 	}
 
-	if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
+	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
 		return err
 	}
 
@@ -317,7 +304,7 @@ func (editor *Editor) handleUpArrowKey() error {
 	}
 
 	if targetXLength < currentXLength {
-		if err := editor.setCursorPosition(targetXLength, yOffset); err != nil {
+		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
 			return err
 		}
 
@@ -335,9 +322,7 @@ func (editor *Editor) handleUpArrowKey() error {
 //
 // FIXME: Sometimes the cursor is moving to the end of the line after beeing on a shorter one
 func (editor *Editor) handleDownArrowKey() error {
-	xOffset := editor.cursor.GetOffsetX()
 	yOffset := editor.cursor.GetOffsetY()
-
 	if yOffset == editor.text.GetLineCount()-1 {
 		return nil
 	}
@@ -348,7 +333,7 @@ func (editor *Editor) handleDownArrowKey() error {
 		return err
 	}
 
-	if err := editor.setCursorPosition(xOffset, yOffset); err != nil {
+	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
 		return err
 	}
 
@@ -358,7 +343,7 @@ func (editor *Editor) handleDownArrowKey() error {
 	}
 
 	if targetXLength < currentXLength {
-		if err := editor.setCursorPosition(targetXLength, yOffset); err != nil {
+		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
 			return err
 		}
 
@@ -381,7 +366,7 @@ func (editor *Editor) handleEnterKey() error {
 
 	targetXOffset := 0
 	targetYOffset := editor.cursor.GetOffsetY() + 1
-	if err := editor.setCursorPosition(targetXOffset, targetYOffset); err != nil {
+	if err := editor.cursor.SetOffsets(targetXOffset, targetYOffset); err != nil {
 		return err
 	}
 
@@ -398,19 +383,6 @@ func (editor *Editor) insertCharacter(char rune) error {
 	ycIndex := editor.cursor.GetOffsetY() - editor.display.GetYOffsetShift()
 
 	if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Handle cursor position change. This funcation is handling both the cursor struct and the underlying console API
-func (editor *Editor) setCursorPosition(xOffset int, yOffset int) error {
-	if err := editor.cursor.SetOffsets(xOffset, yOffset); err != nil {
-		return err
-	}
-
-	if err := editor.console.SetCursorPosition(xOffset, yOffset); err != nil {
 		return err
 	}
 
