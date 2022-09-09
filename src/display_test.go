@@ -6,7 +6,7 @@ import (
 
 func TestDisplayShouldInitialzieForValidSizeAndCursor(t *testing.T) {
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0); err != nil {
+	if err := cursor.Init(0, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -21,7 +21,7 @@ func TestDisplayShouldInitialzieForValidSizeAndCursor(t *testing.T) {
 
 func TestDisplayShouldNotInitialzieForInvalidSize(t *testing.T) {
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0); err != nil {
+	if err := cursor.Init(0, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -36,7 +36,7 @@ func TestDisplayShouldNotInitialzieForInvalidSize(t *testing.T) {
 
 func TestDisplayShouldCalculateCorrectHeightBoundaries(t *testing.T) {
 	cursor := new(Cursor)
-	if err := cursor.Init(5, 12); err != nil {
+	if err := cursor.Init(5, 12, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -59,7 +59,7 @@ func TestDisplayShouldCalculateCorrectHeightBoundaries(t *testing.T) {
 
 func TestDisplayShouldCalculateCorrectWidthBoundaries(t *testing.T) {
 	cursor := new(Cursor)
-	if err := cursor.Init(15, 7); err != nil {
+	if err := cursor.Init(15, 7, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -82,7 +82,7 @@ func TestDisplayShouldCalculateCorrectWidthBoundaries(t *testing.T) {
 
 func TestDisplayShouldCalculateCorrectHeightAndWidthBoundaries(t *testing.T) {
 	cursor := new(Cursor)
-	if err := cursor.Init(21, 17); err != nil {
+	if err := cursor.Init(21, 17, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -105,7 +105,7 @@ func TestDisplayShouldCalculateCorrectHeightAndWidthBoundaries(t *testing.T) {
 
 func TestDisplayShouldIndicateInBoundries(t *testing.T) {
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0); err != nil {
+	if err := cursor.Init(0, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -128,7 +128,7 @@ func TestDisplayShouldIndicateInBoundries(t *testing.T) {
 
 func TestDisplayShouldIndicateOutOfBoundriesForHeight(t *testing.T) {
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0); err != nil {
+	if err := cursor.Init(0, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -151,7 +151,7 @@ func TestDisplayShouldIndicateOutOfBoundriesForHeight(t *testing.T) {
 
 func TestDisplayShouldIndicateOutOfBoundriesForWidth(t *testing.T) {
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0); err != nil {
+	if err := cursor.Init(0, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -174,7 +174,7 @@ func TestDisplayShouldIndicateOutOfBoundriesForWidth(t *testing.T) {
 
 func TestDisplayShouldIndicateOutOfBoundriesForHeightAndWidth(t *testing.T) {
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0); err != nil {
+	if err := cursor.Init(0, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 

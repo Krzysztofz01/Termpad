@@ -74,7 +74,7 @@ func TestLineShouldInsertCharacterAtValidPosition(t *testing.T) {
 	}
 
 	cursor := new(Cursor)
-	if err := cursor.Init(4, 0); err != nil {
+	if err := cursor.Init(4, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -97,7 +97,7 @@ func TestLineShouldNotInsertCharacterAtInvalidPosition(t *testing.T) {
 	}
 
 	cursor := new(Cursor)
-	if err := cursor.Init(90, 0); err != nil {
+	if err := cursor.Init(90, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -120,7 +120,7 @@ func TestLineShouldRemoveCharacterAtValidPosition(t *testing.T) {
 	}
 
 	cursor := new(Cursor)
-	if err := cursor.Init(4, 0); err != nil {
+	if err := cursor.Init(4, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -143,7 +143,7 @@ func TestLineShouldNotRemoveCharacterAtInvalidPosition(t *testing.T) {
 	}
 
 	cursor := new(Cursor)
-	if err := cursor.Init(90, 0); err != nil {
+	if err := cursor.Init(90, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -166,11 +166,11 @@ func TestLineShouldReturCharacterAtValidPosition(t *testing.T) {
 	}
 
 	cursor := new(Cursor)
-	if err := cursor.Init(4, 0); err != nil {
+	if err := cursor.Init(4, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
-	char, err := line.GetBufferCharacter(cursor)
+	char, err := line.GetBufferCharacterByCursor(cursor)
 	if err != nil {
 		t.Fail()
 	}
@@ -190,11 +190,11 @@ func TestLineShouldNotReturCharacterAtInvalidPosition(t *testing.T) {
 	}
 
 	cursor := new(Cursor)
-	if err := cursor.Init(90, 0); err != nil {
+	if err := cursor.Init(90, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
-	char, err := line.GetBufferCharacter(cursor)
+	char, err := line.GetBufferCharacterByCursor(cursor)
 	if err == nil {
 		t.Fail()
 	}
