@@ -280,8 +280,6 @@ func (editor *Editor) handleRightArrowKey() error {
 // TODO: Partial cursor position change. May cause invalid cursor state.
 // Cursor position handling function callers should backup prev position
 // in order to restore it if the operation returns an error
-//
-// FIXME: Sometimes the cursor is moving to the end of the line after beeing on a shorter one
 func (editor *Editor) handleUpArrowKey() error {
 	yOffset := editor.cursor.GetOffsetY()
 	if yOffset == 0 {
@@ -289,11 +287,6 @@ func (editor *Editor) handleUpArrowKey() error {
 	}
 
 	yOffset -= 1
-	currentXLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
-	if err != nil {
-		return err
-	}
-
 	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
 		return err
 	}
@@ -303,7 +296,8 @@ func (editor *Editor) handleUpArrowKey() error {
 		return err
 	}
 
-	if targetXLength < currentXLength {
+	xOffset := editor.cursor.GetOffsetX()
+	if xOffset >= targetXLength {
 		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
 			return err
 		}
@@ -319,8 +313,6 @@ func (editor *Editor) handleUpArrowKey() error {
 // TODO: Partial cursor position change. May cause invalid cursor state.
 // Cursor position handling function callers should backup prev position
 // in order to restore it if the operation returns an error
-//
-// FIXME: Sometimes the cursor is moving to the end of the line after beeing on a shorter one
 func (editor *Editor) handleDownArrowKey() error {
 	yOffset := editor.cursor.GetOffsetY()
 	if yOffset == editor.text.GetLineCount()-1 {
@@ -328,11 +320,6 @@ func (editor *Editor) handleDownArrowKey() error {
 	}
 
 	yOffset += 1
-	currentXLength, err := editor.text.GetLineLengthByCursor(editor.cursor)
-	if err != nil {
-		return err
-	}
-
 	if err := editor.cursor.SetOffsetY(yOffset); err != nil {
 		return err
 	}
@@ -342,7 +329,8 @@ func (editor *Editor) handleDownArrowKey() error {
 		return err
 	}
 
-	if targetXLength < currentXLength {
+	xOffset := editor.cursor.GetOffsetX()
+	if xOffset >= targetXLength {
 		if err := editor.cursor.SetOffsetX(targetXLength); err != nil {
 			return err
 		}

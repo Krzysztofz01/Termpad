@@ -2,7 +2,6 @@ package main
 
 import "errors"
 
-// FIXME: One unit padding on end of the lines
 // Structure representing the current position of the editor cursor
 type Cursor struct {
 	xOffset int
