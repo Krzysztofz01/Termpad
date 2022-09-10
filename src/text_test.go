@@ -137,11 +137,15 @@ func TestTextShouldRemoveCharactrer(t *testing.T) {
 	}
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 1, CreateConsoleMockup()); err != nil {
+	if err := cursor.Init(1, 1, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 
 	if err := text.RemoveCharacter(cursor); err != nil {
+		t.Fail()
+	}
+
+	if err := cursor.SetOffsetX(0); err != nil {
 		t.Fail()
 	}
 

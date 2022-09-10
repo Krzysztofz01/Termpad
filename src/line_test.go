@@ -110,7 +110,7 @@ func TestLineShouldNotInsertCharacterAtInvalidPosition(t *testing.T) {
 	}
 }
 
-func TestLineShouldRemoveCharacterAtValidPosition(t *testing.T) {
+func TestLineShouldRemoveCharacterAtValidPositionStart(t *testing.T) {
 	line := new(Line)
 
 	input := "Valid string"
@@ -120,7 +120,53 @@ func TestLineShouldRemoveCharacterAtValidPosition(t *testing.T) {
 	}
 
 	cursor := new(Cursor)
-	if err := cursor.Init(4, 0, CreateConsoleMockup()); err != nil {
+	if err := cursor.Init(1, 0, CreateConsoleMockup()); err != nil {
+		t.Fail()
+	}
+
+	if err := line.RemoveBufferCharacter(cursor); err != nil {
+		t.Fail()
+	}
+
+	if *line.GetBufferAsString() != "alid string" {
+		t.Fail()
+	}
+}
+
+func TestLineShouldRemoveCharacterAtValidPositionEnd(t *testing.T) {
+	line := new(Line)
+
+	input := "Valid string"
+
+	if err := line.Init(input); err != nil {
+		t.Fail()
+	}
+
+	cursor := new(Cursor)
+	if err := cursor.Init(12, 0, CreateConsoleMockup()); err != nil {
+		t.Fail()
+	}
+
+	if err := line.RemoveBufferCharacter(cursor); err != nil {
+		t.Fail()
+	}
+
+	if *line.GetBufferAsString() != "Valid strin" {
+		t.Fail()
+	}
+}
+
+func TestLineShouldRemoveCharacterAtValidPositionMiddle(t *testing.T) {
+	line := new(Line)
+
+	input := "Valid string"
+
+	if err := line.Init(input); err != nil {
+		t.Fail()
+	}
+
+	cursor := new(Cursor)
+	if err := cursor.Init(5, 0, CreateConsoleMockup()); err != nil {
 		t.Fail()
 	}
 

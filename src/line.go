@@ -71,7 +71,7 @@ func (line *Line) InsertBufferCharacter(char rune, cursor *Cursor) error {
 // Remove a rune at the position specified by the given cursor
 func (line *Line) RemoveBufferCharacter(cursor *Cursor) error {
 	xOffset := cursor.GetOffsetX()
-	if xOffset < 0 {
+	if xOffset <= 0 {
 		return errors.New("line: invalid x (horizontal) negative offset requested to remove")
 	}
 
@@ -79,8 +79,8 @@ func (line *Line) RemoveBufferCharacter(cursor *Cursor) error {
 		return errors.New("line: invalid x (horizontal) out of bound offset requested to remove")
 	}
 
-	bufferHead := line.buffer[:xOffset]
-	bufferTail := line.buffer[xOffset+1:]
+	bufferHead := line.buffer[:xOffset-1]
+	bufferTail := line.buffer[xOffset:]
 
 	line.buffer = append(bufferHead, bufferTail...)
 
