@@ -212,9 +212,9 @@ func (editor *Editor) renderChanges() error {
 	// 	}
 	// }
 
-	if err := editor.redrawFull(); err != nil {
-		return err
-	}
+	// if err := editor.redrawFull(); err != nil {
+	// 	return err
+	// }
 
 	return editor.console.Commit()
 }
@@ -262,27 +262,36 @@ func (editor *Editor) redrawFull() error {
 
 // Function is rewriting text changes to the underlying console API screen, according to the display boundaries. Only the line specified by the cursor is affected.
 // TODO: Verify if the y (vertical) offset is correclty calculated
-// TODO: Implement full redraw fallback after resolving TODO:9
 func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
-	yOffset := editor.cursor.GetOffsetY()
+	if editor.display.CursorInBoundries() && fullRedrawFallback {
+		return editor.redrawFull()
+	}
 
-	tWidth, err := editor.text.GetLineLengthByOffset(yOffset)
+	ytOffset := editor.cursor.GetOffsetY()
+	ycOffset := ytOffset - editor.display.GetYOffsetShift()
+
+	tWidth, err := editor.text.GetLineLengthByOffset(ytOffset)
 	if err != nil {
 		return err
 	}
 
-	xShift := editor.display.GetXOffsetShift()
-	ycIndex := yOffset - editor.display.GetYOffsetShift()
+	// TODO: Decide where to access this information (console/display)
+	cWidth := editor.console.GetWidth()
 
-	for xtIndex := xShift; xtIndex < tWidth; xtIndex += 1 {
-		char, err := editor.text.GetCharacterByOffsets(xtIndex, yOffset)
-		if err != nil {
-			return err
+	xShfit := editor.display.GetXOffsetShift()
+
+	for xcIndex := 0; xcIndex < cWidth; xcIndex += 1 {
+		xtIndex := xcIndex + xShfit
+
+		var char rune = ' '
+		if xtIndex < tWidth {
+			char, err = editor.text.GetCharacterByOffsets(xtIndex, ytOffset)
+			if err != nil {
+				return err
+			}
 		}
 
-		xcIndex := xtIndex - xShift
-
-		if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
+		if err := editor.console.InsertCharacter(xcIndex, ycOffset, char); err != nil {
 			return err
 		}
 	}
@@ -468,10 +477,7 @@ func (editor *Editor) handleKeyPrintableCharacter(char rune) error {
 		return err
 	}
 
-	xcIndex := editor.cursor.GetOffsetX() - editor.display.GetXOffsetShift()
-	ycIndex := editor.cursor.GetOffsetY() - editor.display.GetYOffsetShift()
-
-	if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
+	if err := editor.redrawLine(true); err != nil {
 		return err
 	}
 
