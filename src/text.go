@@ -6,6 +6,7 @@ import (
 )
 
 // A structure representing the text, which is a container for the List structures
+// TODO: Implement line concatenation feature
 type Text struct {
 	lines    []*Line
 	modified bool

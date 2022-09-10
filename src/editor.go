@@ -135,6 +135,10 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 	switch event.Key {
 	case KeyEnter:
 		err = editor.handleKeyEnter()
+	case KeyBackspace:
+		err = editor.handleKeyBackspace()
+	case KeyDelete:
+		err = editor.handleKeyDelete()
 	case KeyLeft:
 		err = editor.handleKeyLeftArrow()
 	case KeyRight:
@@ -493,13 +497,43 @@ func (editor *Editor) handleKeyEnter() error {
 		return err
 	}
 
-	targetXOffset := 0
-	targetYOffset := editor.cursor.GetOffsetY() + 1
-	if err := editor.cursor.SetOffsets(targetXOffset, targetYOffset); err != nil {
+	targetXOffset := editor.cursor.GetOffsetX() + 1
+	if err := editor.cursor.SetOffsetX(targetXOffset); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// [Backspace] Handle character removing via the backspace key
+// TODO: Handle the behaviour when deleting on xO=0 and moving to line above
+// TODO: Handle the behaviour when xO=0 and yO=0
+// TODO: Handle line concat
+func (editor *Editor) handleKeyBackspace() error {
+	if err := editor.text.RemoveCharacter(editor.cursor); err != nil {
+		return err
+	}
+
+	if err := editor.redrawLine(true); err != nil {
+		return err
+	}
+
+	targetXOffset := editor.cursor.GetOffsetX() - 1
+	if err := editor.cursor.SetOffsetX(targetXOffset); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// [Delete] Handle character removing via the backsapce key
+// TODO: Spontaneous crash?
+// TODO: Proper implementation, currently its a very hacky, stupid and unsafe solution
+func (editor *Editor) handleKeyDelete() error {
+	xOffset := editor.cursor.GetOffsetX()
+	editor.cursor.SetOffsetX(xOffset + 1)
+
+	return editor.handleKeyBackspace()
 }
 
 // [ASCII 0x20 - 0x7E] Handle printable character insertion.
