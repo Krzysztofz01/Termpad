@@ -200,22 +200,8 @@ func (editor *Editor) SaveChanges() error {
 	return nil
 }
 
-// Handle the underlying console API render. If the cursor is out of display boundary the whole screen will be rewriten
-//
-// TODO: Currently every change is redrawing the whole screen, a better appraochs is required to render only the line that
-// has changes (or lines, in case of line break/insert)
-// FIXME: This funcation should not call any drawing funcation. It should only pass changes to underling API
+// Request a render of all changes to the screen of the underlying console API
 func (editor *Editor) renderChanges() error {
-	// if !editor.display.CursorInBoundries() {
-	// 	if err := editor.redrawText(); err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	// if err := editor.redrawFull(); err != nil {
-	// 	return err
-	// }
-
 	return editor.console.Commit()
 }
 
