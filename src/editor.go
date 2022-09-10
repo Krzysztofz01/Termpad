@@ -206,38 +206,44 @@ func (editor *Editor) renderChanges() error {
 }
 
 // Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines are affected
-//
-// TODO: The text can be longer than the screen. The editor will require a functionality
-// to move the current visible content. The current implementation is ,,naive” and
-// does not handle screen overflow.
-//
-// The implementation of the display may solve the problem. But further tests are required
-// to verfiy all posible offset shift posibilities
+// TODO: The tHeight can be greater than dHeight - we can avoid redundand off-display rendering
 func (editor *Editor) redrawFull() error {
-	if err := editor.console.Clear(); err != nil {
-		return err
-	}
-
-	tHeight := editor.text.GetLineCount()
+	ytLength := editor.text.GetLineCount()
+	ycLength, xcLength := editor.console.GetSize()
 	xShift := editor.display.GetXOffsetShift()
 	yShift := editor.display.GetYOffsetShift()
 
-	for ytIndex := yShift; ytIndex < tHeight; ytIndex += 1 {
-		tWidth, err := editor.text.GetLineLengthByOffset(ytIndex)
-		if err != nil {
-			return err
-		}
+	for ycIndex := 0; ycIndex < ycLength; ycIndex += 1 {
+		ytIndex := ycIndex + yShift
 
-		for xtIndex := xShift; xtIndex < tWidth; xtIndex += 1 {
-			char, err := editor.text.GetCharacterByOffsets(xtIndex, ytIndex)
+		if ycIndex < ytLength {
+			xtLength, err := editor.text.GetLineLengthByOffset(ytIndex)
 			if err != nil {
 				return err
 			}
 
-			xcIndex := xtIndex - xShift
-			ycIndex := ytIndex - yShift
+			for xcIndex := 0; xcIndex < xcLength; xcIndex += 1 {
+				xtIndex := xcIndex + xShift
 
-			if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
+				var char rune = ' '
+
+				if xtIndex < xtLength {
+					char, err = editor.text.GetCharacterByOffsets(xtIndex, ytIndex)
+					if err != nil {
+						return err
+					}
+				}
+
+				if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
+					return err
+				}
+			}
+
+			continue
+		}
+
+		for xcIndex := 0; xcIndex < xcLength; xcIndex += 1 {
+			if err := editor.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
 				return err
 			}
 		}
@@ -247,7 +253,6 @@ func (editor *Editor) redrawFull() error {
 }
 
 // Function is rewriting text changes to the underlying console API screen, according to the display boundaries. Only the line specified by the cursor is affected.
-// TODO: Verify if the y (vertical) offset is correclty calculated
 func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
 	if editor.display.CursorInBoundries() && fullRedrawFallback {
 		return editor.redrawFull()
@@ -286,12 +291,53 @@ func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
 }
 
 // Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines (including the current) below the cursor are affected.
-// TODO: Implement full redraw fallback after resolving TODO:9
 func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
-	// NOTE: Perform loop starting from the current y index
-	// NOTE: Dont loop x in range of line length, but in display width
-	// NOTE: Fill with rune until line end, than fill with spaces (this is how clear works)
-	return errors.New("editor: not implemeneted")
+	if editor.display.CursorInBoundries() && fullRedrawFallback {
+		return editor.redrawFull()
+	}
+
+	ytLength := editor.text.GetLineCount()
+	ycLength, xcLength := editor.console.GetSize()
+	xShift := editor.display.GetXOffsetShift()
+	yShift := editor.display.GetYOffsetShift()
+
+	for ycIndex := editor.cursor.GetOffsetY() - yShift; ycIndex < ycLength; ycIndex += 1 {
+		ytIndex := ycIndex + yShift
+
+		if ycIndex < ytLength {
+			xtLength, err := editor.text.GetLineLengthByOffset(ytIndex)
+			if err != nil {
+				return err
+			}
+
+			for xcIndex := 0; xcIndex < xcLength; xcIndex += 1 {
+				xtIndex := xcIndex + xShift
+
+				var char rune = ' '
+
+				if xtIndex < xtLength {
+					char, err = editor.text.GetCharacterByOffsets(xtIndex, ytIndex)
+					if err != nil {
+						return err
+					}
+				}
+
+				if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
+					return err
+				}
+			}
+
+			continue
+		}
+
+		for xcIndex := 0; xcIndex < xcLength; xcIndex += 1 {
+			if err := editor.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // NOTE: This section contains all the key-specific handler functions
@@ -443,8 +489,7 @@ func (editor *Editor) handleKeyEnter() error {
 		return err
 	}
 
-	// FIXME: Here is a posiblity for implementing a more efficient render. But this is working for now. Use redrawLine()
-	if err := editor.redrawFull(); err != nil {
+	if err := editor.redrawBelow(true); err != nil {
 		return err
 	}
 
