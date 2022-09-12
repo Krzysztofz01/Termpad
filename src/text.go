@@ -88,8 +88,8 @@ func (text *Text) InsertCharacter(char rune, cursor *Cursor) error {
 	return targetLine.InsertBufferCharacter(char, cursor)
 }
 
-// Remove a character inside specific line at specific offset given by the cursor position
-func (text *Text) RemoveCharacter(cursor *Cursor) error {
+// Remove a character at specific line at specific position before the position given by the offset of the given cursor
+func (text *Text) RemoveCharacterHead(cursor *Cursor) error {
 	yOffset := cursor.GetOffsetY()
 
 	if yOffset < 0 {
@@ -101,7 +101,23 @@ func (text *Text) RemoveCharacter(cursor *Cursor) error {
 	}
 
 	targetLine := text.lines[yOffset]
-	return targetLine.RemoveBufferCharacter(cursor)
+	return targetLine.RemoveBufferCharacterHead(cursor)
+}
+
+// Remove a character at specific line at specific position behind the position given by the offset of the given cursor
+func (text *Text) RemoveCharacterTail(cursor *Cursor) error {
+	yOffset := cursor.GetOffsetY()
+
+	if yOffset < 0 {
+		return errors.New("text: invalid y (vertical) negative offset requested to remove")
+	}
+
+	if yOffset > len(text.lines) {
+		return errors.New("text: invalid y (vertical) out of bound offset requested to remove")
+	}
+
+	targetLine := text.lines[yOffset]
+	return targetLine.RemoveBufferCharacterTail(cursor)
 }
 
 // Handle line inserting and line breaking

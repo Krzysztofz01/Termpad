@@ -128,7 +128,7 @@ func TestTextShouldNotInsertCharacterAtInvalidPosition(t *testing.T) {
 	}
 }
 
-func TestTextShouldRemoveCharactrer(t *testing.T) {
+func TestTextShouldRemoveCharactrerHead(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
@@ -141,7 +141,7 @@ func TestTextShouldRemoveCharactrer(t *testing.T) {
 		t.Fail()
 	}
 
-	if err := text.RemoveCharacter(cursor); err != nil {
+	if err := text.RemoveCharacterHead(cursor); err != nil {
 		t.Fail()
 	}
 
@@ -159,7 +159,38 @@ func TestTextShouldRemoveCharactrer(t *testing.T) {
 	}
 }
 
-func TestTextShouldNotRemoveCharactrerAtInvalidPosition(t *testing.T) {
+func TestTextShouldRemoveCharactrerTail(t *testing.T) {
+	textContent := "First line\nSecond line\nThird line"
+
+	text := new(Text)
+	if err := text.Init(textContent, false); err != nil {
+		t.Fail()
+	}
+
+	cursor := new(Cursor)
+	if err := cursor.Init(1, 1, CreateConsoleMockup()); err != nil {
+		t.Fail()
+	}
+
+	if err := text.RemoveCharacterTail(cursor); err != nil {
+		t.Fail()
+	}
+
+	if err := cursor.SetOffsetX(2); err != nil {
+		t.Fail()
+	}
+
+	char, err := text.GetCharacterByCursor(cursor)
+	if err != nil {
+		t.Fail()
+	}
+
+	if char != 'o' {
+		t.Fail()
+	}
+}
+
+func TestTextShouldNotRemoveCharactrerHeadAtInvalidPosition(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
@@ -172,7 +203,25 @@ func TestTextShouldNotRemoveCharactrerAtInvalidPosition(t *testing.T) {
 		t.Fail()
 	}
 
-	if err := text.RemoveCharacter(cursor); err == nil {
+	if err := text.RemoveCharacterHead(cursor); err == nil {
+		t.Fail()
+	}
+}
+
+func TestTextShouldNotRemoveCharactrerTailAtInvalidPosition(t *testing.T) {
+	textContent := "First line\nSecond line\nThird line"
+
+	text := new(Text)
+	if err := text.Init(textContent, false); err != nil {
+		t.Fail()
+	}
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 20, CreateConsoleMockup()); err != nil {
+		t.Fail()
+	}
+
+	if err := text.RemoveCharacterTail(cursor); err == nil {
 		t.Fail()
 	}
 }
