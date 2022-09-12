@@ -506,11 +506,12 @@ func (editor *Editor) handleKeyEnter() error {
 }
 
 // [Backspace] Handle character removing via the backspace key
+// TODO: Proper use of new head/tail character remove API
 // TODO: Handle the behaviour when deleting on xO=0 and moving to line above
 // TODO: Handle the behaviour when xO=0 and yO=0
 // TODO: Handle line concat
 func (editor *Editor) handleKeyBackspace() error {
-	if err := editor.text.RemoveCharacter(editor.cursor); err != nil {
+	if err := editor.text.RemoveCharacterHead(editor.cursor); err != nil {
 		return err
 	}
 
@@ -527,6 +528,7 @@ func (editor *Editor) handleKeyBackspace() error {
 }
 
 // [Delete] Handle character removing via the backsapce key
+// TODO: Proper use of new head/tail character remove API
 // TODO: Spontaneous crash?
 // TODO: Proper implementation, currently its a very hacky, stupid and unsafe solution
 func (editor *Editor) handleKeyDelete() error {

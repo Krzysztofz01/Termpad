@@ -187,6 +187,38 @@ func (text *Text) InsertLine(cursor *Cursor) error {
 	return nil
 }
 
+// Handle combining two lines into one
+// NOTE: The logic works in such a way, that the current line will be appended to the the end of the line above
+// TODO: Implement unit tests
+func (text *Text) CombineLine(cursor *Cursor) error {
+	yOffset := cursor.GetOffsetY()
+
+	if yOffset < 1 {
+		return errors.New("text: invalid y (vertical) negative or out of bound offset requested to combine")
+	}
+
+	if yOffset > len(text.lines) {
+		return errors.New("text: invalid y (vertical) out of bound offset requested to combine")
+	}
+
+	currentLineBuffer := text.lines[yOffset].GetBufferAsSlice()
+	targetLineBuffer := text.lines[yOffset-1].GetBufferAsSlice()
+	combinedLineBuffer := append(currentLineBuffer, targetLineBuffer...)
+
+	combinedLine, err := text.bufferToLine(combinedLineBuffer)
+	if err != nil {
+		return err
+	}
+
+	text.lines[yOffset-1] = combinedLine
+
+	linesHead := text.lines[:yOffset]
+	linesTail := text.lines[yOffset+1:]
+	text.lines = append(linesHead, linesTail...)
+
+	return nil
+}
+
 // Helper function to for creating line structures from line buffers
 func (text *Text) bufferToLine(lineBuffer []rune) (*Line, error) {
 	builder := strings.Builder{}
