@@ -93,7 +93,6 @@ func (display *Display) GetYOffsetShift() int {
 }
 
 // Return a bool values indicating if a redraw is required according to the curent position
-// TODO: There is a bug in the boundary comparison which is causing every ,,fast'' redraw to fallback to the full redraw
 func (display *Display) CursorInBoundries() bool {
 	xOffset := display.cursor.GetOffsetX()
 	yOffset := display.cursor.GetOffsetY()
@@ -104,7 +103,7 @@ func (display *Display) CursorInBoundries() bool {
 	}
 
 	// NOTE: Left side overflow
-	if xOffset < display.xBoundary {
+	if display.xBoundary > 0 && xOffset < display.xBoundary {
 		return false
 	}
 
@@ -114,7 +113,7 @@ func (display *Display) CursorInBoundries() bool {
 	}
 
 	// NOTE: Down side overflow
-	if yOffset < display.yBoundary {
+	if display.yBoundary > 0 && yOffset < display.yBoundary {
 		return false
 	}
 
