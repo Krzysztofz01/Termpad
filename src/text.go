@@ -188,8 +188,9 @@ func (text *Text) InsertLine(cursor *Cursor) error {
 }
 
 // Handle combining two lines into one
-// NOTE: The logic works in such a way, that the current line will be appended to the the end of the line above
-// TODO: Implement unit tests
+// NOTE: The logic works in such a way, that the current line will be appended to the the end of the line above.
+// The function doesnt use the xOffset but according to the domain logice this function is used only when the
+// xOffset is equal to 0. We can validate the xOffset, but it is not currently neccessary.
 func (text *Text) CombineLine(cursor *Cursor) error {
 	yOffset := cursor.GetOffsetY()
 
@@ -203,7 +204,7 @@ func (text *Text) CombineLine(cursor *Cursor) error {
 
 	currentLineBuffer := text.lines[yOffset].GetBufferAsSlice()
 	targetLineBuffer := text.lines[yOffset-1].GetBufferAsSlice()
-	combinedLineBuffer := append(currentLineBuffer, targetLineBuffer...)
+	combinedLineBuffer := append(targetLineBuffer, currentLineBuffer...)
 
 	combinedLine, err := text.bufferToLine(combinedLineBuffer)
 	if err != nil {

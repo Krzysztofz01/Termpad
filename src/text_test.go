@@ -310,6 +310,52 @@ func TestTextShouldBreaklineInsideLine(t *testing.T) {
 	}
 }
 
+func TestTextShouldCombinelineForValidCursorPosition(t *testing.T) {
+	textContent := "First line\nSecond line\nThird line"
+
+	text := new(Text)
+	if err := text.Init(textContent, false); err != nil {
+		t.Fail()
+	}
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 1, CreateConsoleMockup()); err != nil {
+		t.Fail()
+	}
+
+	if err := text.CombineLine(cursor); err != nil {
+		t.Fail()
+	}
+
+	result, err := text.GetTextAsString(false)
+	if err != nil {
+		t.Fail()
+	}
+
+	expectedTextContent := "First lineSecond line\nThird line"
+	if *result != expectedTextContent {
+		t.Fail()
+	}
+}
+
+func TestTextShouldCombinelineForInvalidCursorPosition(t *testing.T) {
+	textContent := "First line\nSecond line\nThird line"
+
+	text := new(Text)
+	if err := text.Init(textContent, false); err != nil {
+		t.Fail()
+	}
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 5, CreateConsoleMockup()); err != nil {
+		t.Fail()
+	}
+
+	if err := text.CombineLine(cursor); err == nil {
+		t.Fail()
+	}
+}
+
 func TestTextShouldGetCharacter(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
