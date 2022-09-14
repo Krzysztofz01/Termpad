@@ -160,7 +160,29 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 
 // Handling function for the ConsoleEventResize console event. The funcation returns a bool value indicating if the editor loop should be broken
 func (editor *Editor) handleConsoleEventResize(event ConsoleEventResize) (bool, error) {
-	// TODO: Implement some checks to verify if the redraw is even required
+	applyRedraw := false
+	width, height := editor.console.GetSize()
+
+	if editor.display.HasSizeChanged(width, height) {
+		if err := editor.display.Resize(width, height); err != nil {
+			return false, err
+		}
+
+		applyRedraw = true
+	}
+
+	if !editor.display.CursorInBoundries() {
+		applyRedraw = true
+	}
+
+	if !applyRedraw {
+		return false, nil
+	}
+
+	if err := editor.redrawFull(); err != nil {
+		return false, err
+	}
+
 	return false, editor.renderChanges()
 }
 
