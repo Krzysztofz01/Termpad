@@ -68,6 +68,20 @@ func (display *Display) Resize(width int, height int) error {
 	return nil
 }
 
+// Return a bool value indicating whether the given dimensions are different from the current display dimensions
+// TODO: Implement unit tests
+func (display *Display) HasSizeChanged(width int, height int) bool {
+	if display.width != width {
+		return true
+	}
+
+	if display.height != height {
+		return true
+	}
+
+	return false
+}
+
 // Return the x (horizontal) display offset
 func (display *Display) GetXOffsetShift() int {
 	return display.xBoundary
@@ -79,6 +93,7 @@ func (display *Display) GetYOffsetShift() int {
 }
 
 // Return a bool values indicating if a redraw is required according to the curent position
+// TODO: There is a bug in the boundary comparison which is causing every ,,fast'' redraw to fallback to the full redraw
 func (display *Display) CursorInBoundries() bool {
 	xOffset := display.cursor.GetOffsetX()
 	yOffset := display.cursor.GetOffsetY()
