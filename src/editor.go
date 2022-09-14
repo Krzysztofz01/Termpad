@@ -324,7 +324,7 @@ func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
 	}
 
 	ytLength := editor.text.GetLineCount()
-	ycLength, xcLength := editor.console.GetSize()
+	xcLength, ycLength := editor.console.GetSize()
 	xShift := editor.display.GetXOffsetShift()
 	yShift := editor.display.GetYOffsetShift()
 
