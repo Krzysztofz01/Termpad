@@ -529,11 +529,42 @@ func (editor *Editor) handleKeyEnter() error {
 }
 
 // [Backspace] Handle character removing via the backspace key
-// TODO: Proper use of new head/tail character remove API
-// TODO: Handle the behaviour when deleting on xO=0 and moving to line above
-// TODO: Handle the behaviour when xO=0 and yO=0
-// TODO: Handle line concat
 func (editor *Editor) handleKeyBackspace() error {
+	xOffset := editor.cursor.GetOffsetX()
+	yOffset := editor.cursor.GetOffsetY()
+
+	// NOTE: The case when we are at the begining of the text
+	if yOffset == 0 && xOffset == 0 {
+		return nil
+	}
+
+	// NOTE: The case when we need to remove the new line
+	if xOffset == 0 {
+		targetLineLength, err := editor.text.GetLineLengthByOffset(yOffset - 1)
+		if err != nil {
+			return err
+		}
+
+		if err := editor.text.CombineLine(editor.cursor); err != nil {
+			return err
+		}
+
+		// TODO: This look like it can be optimized, but there is currently no ,,redraw above'' function.
+		// And a func with such capabilities would still redraw the content below. It can only optimize
+		// endge cases when we are editing the last line in current display range. Too much hustle for
+		// such negligible performance improvement.
+		if err := editor.redrawFull(); err != nil {
+			return err
+		}
+
+		if err := editor.cursor.SetOffsets(targetLineLength, yOffset-1); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// NOTE: The default case when we are removing a character
 	if err := editor.text.RemoveCharacterHead(editor.cursor); err != nil {
 		return err
 	}
@@ -542,8 +573,7 @@ func (editor *Editor) handleKeyBackspace() error {
 		return err
 	}
 
-	targetXOffset := editor.cursor.GetOffsetX() - 1
-	if err := editor.cursor.SetOffsetX(targetXOffset); err != nil {
+	if err := editor.cursor.SetOffsetX(xOffset - 1); err != nil {
 		return err
 	}
 
