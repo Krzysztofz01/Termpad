@@ -235,7 +235,7 @@ func (editor *Editor) renderChanges() error {
 // TODO: The tHeight can be greater than dHeight - we can avoid redundand off-display rendering
 func (editor *Editor) redrawFull() error {
 	ytLength := editor.text.GetLineCount()
-	ycLength, xcLength := editor.console.GetSize()
+	xcLength, ycLength := editor.console.GetSize()
 	xShift := editor.display.GetXOffsetShift()
 	yShift := editor.display.GetYOffsetShift()
 
@@ -280,7 +280,7 @@ func (editor *Editor) redrawFull() error {
 
 // Function is rewriting text changes to the underlying console API screen, according to the display boundaries. Only the line specified by the cursor is affected.
 func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
-	if editor.display.CursorInBoundries() && fullRedrawFallback {
+	if !editor.display.CursorInBoundries() && fullRedrawFallback {
 		return editor.redrawFull()
 	}
 
@@ -317,8 +317,9 @@ func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
 }
 
 // Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines (including the current) below the cursor are affected.
+// TODO: The ycIndex < ytLength condition prevents the overwrting of previous screen data
 func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
-	if editor.display.CursorInBoundries() && fullRedrawFallback {
+	if !editor.display.CursorInBoundries() && fullRedrawFallback {
 		return editor.redrawFull()
 	}
 
