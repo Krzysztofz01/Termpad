@@ -81,7 +81,10 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 
 	editor.config = config
 
-	// TODO: This will change after implementation of all redrawing and rendering functions
+	if err := editor.redrawFull(); err != nil {
+		return err
+	}
+
 	if err := editor.renderChanges(); err != nil {
 		return err
 	}
