@@ -519,8 +519,8 @@ func (editor *Editor) handleKeyEnter() error {
 		return err
 	}
 
-	targetXOffset := editor.cursor.GetOffsetX() + 1
-	if err := editor.cursor.SetOffsetX(targetXOffset); err != nil {
+	yOffset := editor.cursor.GetOffsetY()
+	if err := editor.cursor.SetOffsets(0, yOffset+1); err != nil {
 		return err
 	}
 
