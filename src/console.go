@@ -1,5 +1,7 @@
 package main
 
+// TODO: Add color related preferences
+
 // Contract abstraction for the underlying console API
 type Console interface {
 	// Set a given character at given console position
@@ -29,6 +31,9 @@ type Console interface {
 	// Return the x, y (width, height) of the console
 	GetSize() (int, int)
 
+	// Set the cursor style provided by the console
+	SetCursorStyle(cursorStyle CursorStyle) error
+
 	// Finalize the screen and release resources
 	Dispose() error
 }
@@ -45,6 +50,19 @@ type ConsoleEventResize struct {
 	Width  int
 	Height int
 }
+
+// Type representing the console cursor style, that can be provided by the console API implementation
+type CursorStyle int16
+
+const (
+	NoCursor CursorStyle = iota
+	BarCursorStatic
+	BarCursorDynamic
+	BlockCursorStatic
+	BlockCursorDynamic
+	LineCursorStatic
+	LineCursorDynamic
+)
 
 // Type representing named keys, the first one, named printable is an universal representation for ASCII letters
 type NamedKey int16

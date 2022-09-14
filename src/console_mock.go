@@ -45,6 +45,10 @@ func (console *ConsoleMock) GetSize() (int, int) {
 	return 0, 0
 }
 
+func (console *ConsoleMock) SetCursorStyle(cursorStyle CursorStyle) error {
+	return nil
+}
+
 func (console *ConsoleMock) Dispose() error {
 	return nil
 }

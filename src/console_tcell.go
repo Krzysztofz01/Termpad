@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // Structure implementing the console contract based on the console API exposed by Tcell library
@@ -15,27 +15,25 @@ type ConsoleTcell struct {
 func CreateConsole() (Console, error) {
 	screen, err := tcell.NewScreen()
 	if err != nil {
-		// TODO: Logging
 		return nil, err
 	}
 
 	if err := screen.Init(); err != nil {
-		// TODO: Logging
 		return nil, err
 	}
-
-	// TODO: Implement color related preferences etc.
-	//
-	// Styles disabled, beacuse they are not compatible with terminal provided styles
-	// style := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
-	// screen.SetStyle(style)
 
 	screen.DisableMouse()
 	screen.ShowCursor(0, 0)
 
-	return &ConsoleTcell{
+	console := ConsoleTcell{
 		screen: screen,
-	}, nil
+	}
+
+	if err := console.SetCursorStyle(BarCursorStatic); err != nil {
+		return nil, err
+	}
+
+	return &console, nil
 }
 
 func (console *ConsoleTcell) InsertCharacter(xIndex int, yIndex int, char rune) error {
@@ -119,6 +117,35 @@ func (console *ConsoleTcell) GetSize() (int, int) {
 	width, height := console.screen.Size()
 
 	return width, height
+}
+
+func (console *ConsoleTcell) SetCursorStyle(cursorStyle CursorStyle) error {
+	if cursorStyle == NoCursor {
+		console.screen.HideCursor()
+		return nil
+	}
+
+	var selectedCursorStyle tcell.CursorStyle
+
+	switch cursorStyle {
+	case BarCursorStatic:
+		selectedCursorStyle = tcell.CursorStyleSteadyBar
+	case BarCursorDynamic:
+		selectedCursorStyle = tcell.CursorStyleBlinkingBar
+	case BlockCursorStatic:
+		selectedCursorStyle = tcell.CursorStyleSteadyBlock
+	case BlockCursorDynamic:
+		selectedCursorStyle = tcell.CursorStyleBlinkingBlock
+	case LineCursorStatic:
+		selectedCursorStyle = tcell.CursorStyleSteadyUnderline
+	case LineCursorDynamic:
+		selectedCursorStyle = tcell.CursorStyleBlinkingUnderline
+	default:
+		return errors.New("console: invalid internal cursor style")
+	}
+
+	console.screen.SetCursorStyle(selectedCursorStyle)
+	return nil
 }
 
 func (console *ConsoleTcell) Dispose() error {
