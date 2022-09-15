@@ -176,7 +176,7 @@ func (console *ConsoleTcell) translateNamedKey(key tcell.Key) NamedKey {
 		return KeyEnd
 	case tcell.KeyInsert:
 		return KeyInsert
-	case tcell.KeyDEL:
+	case tcell.KeyDelete:
 		return KeyDelete
 	case tcell.KeyPause:
 		return KeyPause
