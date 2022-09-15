@@ -2,19 +2,32 @@ package main
 
 import "errors"
 
-// Structure representing the console display. It contains the boundries of what is/can be displayed
+// TODO: Validate if padding is not greate than the overall size. This can lead to crashed on terminal resize.
+
+// Structure representing the console display. It contains the calculated and fixed horizontal and vertical boundaries
 type Display struct {
-	height    int
-	width     int
-	xBoundary int
-	yBoundary int
-	cursor    *Cursor
+	height              int
+	width               int
+	xCalculatedBoundary int
+	yCalculatedBoundary int
+	xFixedBoundary      int
+	yFixedBoundary      int
+	cursor              *Cursor
+	console             Console
 }
 
 // Display structure initialization function
-func (display *Display) Init(width int, height int, cursor *Cursor) error {
-	display.xBoundary = 0
-	display.yBoundary = 0
+func (display *Display) Init(cursor *Cursor, padding *Padding, console Console) error {
+	display.xCalculatedBoundary = 0
+	display.yCalculatedBoundary = 0
+	display.xFixedBoundary = 0
+	display.yFixedBoundary = 0
+
+	// NOTE: There is currently no support for ,,none-default-console'' dimensions like top, left
+	if padding != nil {
+		display.xFixedBoundary = padding.GetRightPadding()
+		display.yFixedBoundary = padding.GetBottomPadding()
+	}
 
 	if cursor == nil {
 		return errors.New("display: invalid cursor struct reference")
@@ -22,21 +35,29 @@ func (display *Display) Init(width int, height int, cursor *Cursor) error {
 
 	display.cursor = cursor
 
-	if err := display.Resize(width, height); err != nil {
+	if console == nil {
+		return errors.New("display: invalid internal console api contract implementation")
+	}
+
+	display.console = console
+
+	if err := display.Resize(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Function is used to change the size of target display and recalculate the offsets of ,,currently visible'' content
-func (display *Display) Resize(width int, height int) error {
+// Function is used to recalculate the size and all boundaries/offsets of the display (currently visible content)
+func (display *Display) Resize() error {
+	width, height := display.console.GetSize()
+
 	if width <= 0 {
-		return errors.New("display: invalid display width")
+		return errors.New("display: invalid display width value")
 	}
 
 	if height <= 0 {
-		return errors.New("display: invalid display height")
+		return errors.New("display: invalid display height value")
 	}
 
 	display.width = width
@@ -46,31 +67,32 @@ func (display *Display) Resize(width int, height int) error {
 	yOffset := display.cursor.GetOffsetY()
 
 	// NOTE: Right side overflow
-	for xOffset > display.xBoundary+display.width {
-		display.xBoundary += 1
+	for xOffset > display.xCalculatedBoundary+display.width {
+		display.xCalculatedBoundary += 1
 	}
 
 	// NOTE: Left side overflow
-	for xOffset < display.xBoundary {
-		display.xBoundary -= 1
+	for xOffset < display.xCalculatedBoundary {
+		display.xCalculatedBoundary -= 1
 	}
 
 	// NOTE: Top side overflow
-	for yOffset > display.yBoundary+display.height {
-		display.yBoundary += 1
+	for yOffset > display.yCalculatedBoundary+display.height {
+		display.yCalculatedBoundary += 1
 	}
 
 	// NOTE: Down side overflow
-	for yOffset < display.yBoundary {
-		display.yBoundary -= 1
+	for yOffset < display.yCalculatedBoundary {
+		display.yCalculatedBoundary -= 1
 	}
 
 	return nil
 }
 
-// Return a bool value indicating whether the given dimensions are different from the current display dimensions
-// TODO: Implement unit tests
-func (display *Display) HasSizeChanged(width int, height int) bool {
+// Return a bool value indicating whether the console size specified by the underlying console API has changed (not the size of the display)
+func (display *Display) HasSizeChanged() bool {
+	width, height := display.console.GetSize()
+
 	if display.width != width {
 		return true
 	}
@@ -82,38 +104,58 @@ func (display *Display) HasSizeChanged(width int, height int) bool {
 	return false
 }
 
-// Return the x (horizontal) display offset
+// Return the full width and height of the display, which is the raw size deriving from the underlying console API
+func (display *Display) GetFullDisplaySize() (int, int) {
+	return display.width, display.height
+}
+
+// Return the width and height provided for the text. The sizes are affected by the specified display padding
+func (display *Display) GetTextDisplaySize() (int, int) {
+	return display.width - display.xFixedBoundary, display.height - display.yFixedBoundary
+}
+
+// Return the x (horizontal) display padding, specified on display initialization
+func (display *Display) GetXOffsetPadding() int {
+	return display.xFixedBoundary
+}
+
+// Return the y (vertical) display padding, specified on display initialization
+func (display *Display) GetYOffsetPadding() int {
+	return display.yFixedBoundary
+}
+
+// Return the x (horizontal) display offset shift, calculated from the display size and cursor position
 func (display *Display) GetXOffsetShift() int {
-	return display.xBoundary
+	return display.xCalculatedBoundary
 }
 
-// Return the y (vertical) display offset
+// Return the y (vertical) display offset shift, calculated frmo the display size and cursor position
 func (display *Display) GetYOffsetShift() int {
-	return display.yBoundary
+	return display.yCalculatedBoundary
 }
 
-// Return a bool values indicating if a redraw is required according to the curent position
+// Return a bool value indicating whether the cursor is currenlty ,,visible'' according to the offsets (boundaries)
 func (display *Display) CursorInBoundries() bool {
 	xOffset := display.cursor.GetOffsetX()
 	yOffset := display.cursor.GetOffsetY()
 
 	// NOTE: Right side overflow
-	if xOffset > display.xBoundary+display.width {
+	if xOffset > display.xCalculatedBoundary+display.width {
 		return false
 	}
 
 	// NOTE: Left side overflow
-	if display.xBoundary > 0 && xOffset < display.xBoundary {
+	if display.xCalculatedBoundary > 0 && xOffset < display.xCalculatedBoundary {
 		return false
 	}
 
 	// NOTE: Top side overflow
-	if yOffset > display.yBoundary+display.height {
+	if yOffset > display.yCalculatedBoundary+display.height {
 		return false
 	}
 
 	// NOTE: Down side overflow
-	if display.yBoundary > 0 && yOffset < display.yBoundary {
+	if display.yCalculatedBoundary > 0 && yOffset < display.yCalculatedBoundary {
 		return false
 	}
 
