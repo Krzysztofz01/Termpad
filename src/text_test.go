@@ -323,7 +323,7 @@ func TestTextShouldCombinelineForValidCursorPosition(t *testing.T) {
 		t.Fail()
 	}
 
-	if err := text.CombineLine(cursor); err != nil {
+	if err := text.CombineLine(cursor, false); err != nil {
 		t.Fail()
 	}
 
@@ -351,10 +351,12 @@ func TestTextShouldCombinelineForInvalidCursorPosition(t *testing.T) {
 		t.Fail()
 	}
 
-	if err := text.CombineLine(cursor); err == nil {
+	if err := text.CombineLine(cursor, false); err == nil {
 		t.Fail()
 	}
 }
+
+// TODO: Implement unit tests for line combining with the lineStepDown set to true
 
 func TestTextShouldGetCharacter(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"

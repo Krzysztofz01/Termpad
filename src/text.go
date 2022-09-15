@@ -187,12 +187,15 @@ func (text *Text) InsertLine(cursor *Cursor) error {
 	return nil
 }
 
-// Handle combining two lines into one
-// NOTE: The logic works in such a way, that the current line will be appended to the the end of the line above.
-// The function doesnt use the xOffset but according to the domain logice this function is used only when the
-// xOffset is equal to 0. We can validate the xOffset, but it is not currently neccessary.
-func (text *Text) CombineLine(cursor *Cursor) error {
+// Handle combining two lines into one. The current line specified by the cursors yOffset will be appended
+// to the end of the line above. The param lineStepDown inverts this logic by appending the line bellow
+// to the current line specified by the cursors yOffset
+func (text *Text) CombineLine(cursor *Cursor, lineStepDown bool) error {
 	yOffset := cursor.GetOffsetY()
+
+	if lineStepDown {
+		yOffset += 1
+	}
 
 	if yOffset < 1 {
 		return errors.New("text: invalid y (vertical) negative or out of bound offset requested to combine")
