@@ -70,9 +70,13 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 		return err
 	}
 
+	editorPadding := new(Padding)
+	if err := editorPadding.Init(0, 0, 0, 0); err != nil {
+		return err
+	}
+
 	editor.display = new(Display)
-	width, height := editor.console.GetSize()
-	if err := editor.display.Init(width, height, editor.cursor); err != nil {
+	if err := editor.display.Init(editor.cursor, editorPadding, editor.console); err != nil {
 		return err
 	}
 
@@ -165,10 +169,9 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 // Handling function for the ConsoleEventResize console event. The funcation returns a bool value indicating if the editor loop should be broken
 func (editor *Editor) handleConsoleEventResize(event ConsoleEventResize) (bool, error) {
 	applyRedraw := false
-	width, height := editor.console.GetSize()
 
-	if editor.display.HasSizeChanged(width, height) {
-		if err := editor.display.Resize(width, height); err != nil {
+	if editor.display.HasSizeChanged() {
+		if err := editor.display.Resize(); err != nil {
 			return false, err
 		}
 
@@ -236,14 +239,17 @@ func (editor *Editor) renderChanges() error {
 }
 
 // Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines are affected
-// TODO: The tHeight can be greater than dHeight - we can avoid redundand off-display rendering
+// TODO: The tHeight can be greater than dHeight - we can avoid redundand off-display rendering. We can implement this by adding range
+// based functions in the display struct
 func (editor *Editor) redrawFull() error {
 	ytLength := editor.text.GetLineCount()
-	xcLength, ycLength := editor.console.GetSize()
+	xcLength, ycLength := editor.display.GetFullDisplaySize()
 	xShift := editor.display.GetXOffsetShift()
 	yShift := editor.display.GetYOffsetShift()
+	xPadding := editor.display.GetXOffsetPadding()
+	yPadding := editor.display.GetYOffsetPadding()
 
-	for ycIndex := 0; ycIndex < ycLength; ycIndex += 1 {
+	for ycIndex := 0; ycIndex < ycLength-yPadding; ycIndex += 1 {
 		ytIndex := ycIndex + yShift
 
 		if ycIndex < ytLength {
@@ -252,7 +258,7 @@ func (editor *Editor) redrawFull() error {
 				return err
 			}
 
-			for xcIndex := 0; xcIndex < xcLength; xcIndex += 1 {
+			for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
 				xtIndex := xcIndex + xShift
 
 				var char rune = ' '
@@ -272,7 +278,7 @@ func (editor *Editor) redrawFull() error {
 			continue
 		}
 
-		for xcIndex := 0; xcIndex < xcLength; xcIndex += 1 {
+		for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
 			if err := editor.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
 				return err
 			}
@@ -296,12 +302,12 @@ func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
 		return err
 	}
 
-	// TODO: Decide where to access this information (console/display)
-	cWidth := editor.console.GetWidth()
+	cWidth, _ := editor.display.GetFullDisplaySize()
+	xPadding := editor.display.GetXOffsetPadding()
 
 	xShfit := editor.display.GetXOffsetShift()
 
-	for xcIndex := 0; xcIndex < cWidth; xcIndex += 1 {
+	for xcIndex := 0; xcIndex < cWidth-xPadding; xcIndex += 1 {
 		xtIndex := xcIndex + xShfit
 
 		var char rune = ' '
@@ -328,11 +334,13 @@ func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
 	}
 
 	ytLength := editor.text.GetLineCount()
-	xcLength, ycLength := editor.console.GetSize()
+	xcLength, ycLength := editor.display.GetFullDisplaySize()
 	xShift := editor.display.GetXOffsetShift()
 	yShift := editor.display.GetYOffsetShift()
+	xPadding := editor.display.GetXOffsetPadding()
+	yPadding := editor.display.GetYOffsetPadding()
 
-	for ycIndex := editor.cursor.GetOffsetY() - yShift; ycIndex < ycLength; ycIndex += 1 {
+	for ycIndex := editor.cursor.GetOffsetY() - yShift; ycIndex < ycLength-yPadding; ycIndex += 1 {
 		ytIndex := ycIndex + yShift
 
 		if ycIndex < ytLength {
@@ -341,7 +349,7 @@ func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
 				return err
 			}
 
-			for xcIndex := 0; xcIndex < xcLength; xcIndex += 1 {
+			for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
 				xtIndex := xcIndex + xShift
 
 				var char rune = ' '
@@ -361,7 +369,7 @@ func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
 			continue
 		}
 
-		for xcIndex := 0; xcIndex < xcLength; xcIndex += 1 {
+		for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
 			if err := editor.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
 				return err
 			}
