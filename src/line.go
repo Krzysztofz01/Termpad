@@ -90,7 +90,7 @@ func (line *Line) RemoveBufferCharacterHead(cursor *Cursor) error {
 // Remove a rune at the postion behind the position specified by the given cursor
 func (line *Line) RemoveBufferCharacterTail(cursor *Cursor) error {
 	xOffset := cursor.GetOffsetX()
-	if xOffset <= 0 {
+	if xOffset < 0 {
 		return errors.New("line: invalid x (horizontal) negative offset requested to remove")
 	}
 
