@@ -9,6 +9,7 @@ import (
 // TODO: Verify if the cursor can be out of display now, when it is wrapping the console API
 // TODO: Move key handler to helper struct
 // TODO: Better wrapper approach for keeping sync during operation on both internal and console API components
+// TODO: Add support for cursor style preferences
 
 // Structure representing the editor instance which is a warapper for text I/O
 type Editor struct {
@@ -548,7 +549,7 @@ func (editor *Editor) handleKeyBackspace() error {
 			return err
 		}
 
-		if err := editor.text.CombineLine(editor.cursor); err != nil {
+		if err := editor.text.CombineLine(editor.cursor, false); err != nil {
 			return err
 		}
 
@@ -584,14 +585,43 @@ func (editor *Editor) handleKeyBackspace() error {
 }
 
 // [Delete] Handle character removing via the backsapce key
-// TODO: Proper use of new head/tail character remove API
-// TODO: Spontaneous crash?
-// TODO: Proper implementation, currently its a very hacky, stupid and unsafe solution
 func (editor *Editor) handleKeyDelete() error {
 	xOffset := editor.cursor.GetOffsetX()
-	editor.cursor.SetOffsetX(xOffset + 1)
+	yOffset := editor.cursor.GetOffsetY()
 
-	return editor.handleKeyBackspace()
+	targetLineLength, err := editor.text.GetLineLengthByOffset(yOffset)
+	if err != nil {
+		return err
+	}
+
+	// NOTE: The case when we are at the end of the text
+	if yOffset == editor.text.GetLineCount()-1 && xOffset == targetLineLength {
+		return nil
+	}
+
+	// NOTE: The case when we need to remove the new line
+	if xOffset == targetLineLength {
+		if err := editor.text.CombineLine(editor.cursor, true); err != nil {
+			return err
+		}
+
+		if err := editor.redrawBelow(true); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	// NOTE: The default case when we are removing a character
+	if err := editor.text.RemoveCharacterTail(editor.cursor); err != nil {
+		return err
+	}
+
+	if err := editor.redrawLine(true); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // [ASCII 0x20 - 0x7E] Handle printable character insertion.
