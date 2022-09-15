@@ -302,7 +302,6 @@ func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
 		return err
 	}
 
-	// TODO: Decide where to access this information (console/display)
 	cWidth, _ := editor.display.GetFullDisplaySize()
 	xPadding := editor.display.GetXOffsetPadding()
 
