@@ -4,7 +4,7 @@ package main
 type ConsoleMock struct {
 }
 
-// Create a new instance of the Tcell based console
+// Create a new instance of the Tcell based console. The size of the console is 10x10
 func CreateConsoleMockup() Console {
 	return &ConsoleMock{}
 }
@@ -42,7 +42,7 @@ func (console *ConsoleMock) GetHeight() int {
 }
 
 func (console *ConsoleMock) GetSize() (int, int) {
-	return 0, 0
+	return 10, 10
 }
 
 func (console *ConsoleMock) SetCursorStyle(cursorStyle CursorStyle) error {
