@@ -15,3 +15,10 @@
 
 # Go workspace file
 go.work
+
+# Termpad configuration and log files
+termpad-config.json
+termpad.log
+
+# Testing purposes text files
+test.txt

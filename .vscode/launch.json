@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug - External",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/src",
+            "console": "externalTerminal",
+            "args": [
+                "test.txt"
+            ]
+        },
+        {
+            "name": "Debug - Internal",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/src",
+            "console": "integratedTerminal",
+            "args": [
+                "test.txt"
+            ]
+        }
+    ]
+}
