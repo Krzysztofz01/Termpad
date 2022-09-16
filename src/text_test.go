@@ -6,7 +6,7 @@ func TestTextShouldInitializeValidCrLf(t *testing.T) {
 	textContent := "First line\r\nSecond line\r\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 }
@@ -15,14 +15,14 @@ func TestTextShouldInitializeValidLf(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 }
 
 func TestTextShouldInitializeValidNewFile(t *testing.T) {
 	text := new(Text)
-	if err := text.Init("", true); err != nil {
+	if err := text.Init("", false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 }
@@ -31,7 +31,7 @@ func TestTextShouldReturnCorrectLineCountWithSomeLines(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -42,7 +42,7 @@ func TestTextShouldReturnCorrectLineCountWithSomeLines(t *testing.T) {
 
 func TestTextShouldReturnCorrectLineCountWithoutLines(t *testing.T) {
 	text := new(Text)
-	if err := text.Init("", false); err != nil {
+	if err := text.Init("", false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -55,7 +55,7 @@ func TestTextShouldReturnCorrectLineLength(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -73,7 +73,7 @@ func TestTextShouldNotReturnLineLengthOnInvalidPosition(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -87,7 +87,7 @@ func TestTextShouldInsertCharacter(t *testing.T) {
 	textContent := "First line\necond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -114,7 +114,7 @@ func TestTextShouldNotInsertCharacterAtInvalidPosition(t *testing.T) {
 	textContent := "First line\necond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -132,7 +132,7 @@ func TestTextShouldRemoveCharactrerHead(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -163,7 +163,7 @@ func TestTextShouldRemoveCharactrerTail(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -194,7 +194,7 @@ func TestTextShouldNotRemoveCharactrerHeadAtInvalidPosition(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -212,7 +212,7 @@ func TestTextShouldNotRemoveCharactrerTailAtInvalidPosition(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -230,7 +230,7 @@ func TestTextShouldBreaklineAtLineStart(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -243,7 +243,7 @@ func TestTextShouldBreaklineAtLineStart(t *testing.T) {
 		t.Fail()
 	}
 
-	result, err := text.GetTextAsString(false)
+	result, err := text.GetTextAsString()
 	if err != nil {
 		t.Fail()
 	}
@@ -258,7 +258,7 @@ func TestTextShouldBreaklineAtLineEnd(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -271,7 +271,7 @@ func TestTextShouldBreaklineAtLineEnd(t *testing.T) {
 		t.Fail()
 	}
 
-	result, err := text.GetTextAsString(false)
+	result, err := text.GetTextAsString()
 	if err != nil {
 		t.Fail()
 	}
@@ -286,7 +286,7 @@ func TestTextShouldBreaklineInsideLine(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -299,7 +299,7 @@ func TestTextShouldBreaklineInsideLine(t *testing.T) {
 		t.Fail()
 	}
 
-	result, err := text.GetTextAsString(false)
+	result, err := text.GetTextAsString()
 	if err != nil {
 		t.Fail()
 	}
@@ -314,7 +314,7 @@ func TestTextShouldCombinelineForValidCursorPosition(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -327,7 +327,7 @@ func TestTextShouldCombinelineForValidCursorPosition(t *testing.T) {
 		t.Fail()
 	}
 
-	result, err := text.GetTextAsString(false)
+	result, err := text.GetTextAsString()
 	if err != nil {
 		t.Fail()
 	}
@@ -342,7 +342,7 @@ func TestTextShouldCombinelineForInvalidCursorPosition(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -362,7 +362,7 @@ func TestTextShouldGetCharacter(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -385,7 +385,7 @@ func TestTextShouldNotGetCharacterAtInvalidPosition(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -404,16 +404,22 @@ func TestTextShouldConvertBackToString(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
-	if err := text.Init(textContent, false); err != nil {
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
-	result, err := text.GetTextAsString(false)
+	result, err := text.GetTextAsString()
 	if err != nil {
 		t.Fail()
 	}
 
 	if textContent != *result {
 		t.Fail()
+	}
+}
+
+func GetTextTestTextConfigMockup() *TextConfig {
+	return &TextConfig{
+		UsePlatformSpecificEndOfLineSequence: false,
 	}
 }

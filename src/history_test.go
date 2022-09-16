@@ -16,7 +16,7 @@ func TestHistoryShouldPushText(t *testing.T) {
 	}
 
 	text1 := new(Text)
-	if err := text1.Init("Hello World!", false); err != nil {
+	if err := text1.Init("Hello World!", false, GetHistoryTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -33,7 +33,7 @@ func TestHistoryShouldPushText(t *testing.T) {
 	}
 
 	text2 := new(Text)
-	if err := text2.Init("Hello again!", false); err != nil {
+	if err := text2.Init("Hello again!", false, GetHistoryTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -50,7 +50,7 @@ func TestHistoryShouldPopText(t *testing.T) {
 
 	text1 := new(Text)
 	text1String := "Hello World!"
-	if err := text1.Init(text1String, false); err != nil {
+	if err := text1.Init(text1String, false, GetHistoryTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -60,7 +60,7 @@ func TestHistoryShouldPopText(t *testing.T) {
 
 	text2 := new(Text)
 	text2String := "Hello again!"
-	if err := text2.Init(text2String, false); err != nil {
+	if err := text2.Init(text2String, false, GetHistoryTestTextConfigMockup()); err != nil {
 		t.Fail()
 	}
 
@@ -77,7 +77,7 @@ func TestHistoryShouldPopText(t *testing.T) {
 		t.Fail()
 	}
 
-	expectedText, err = targetText.GetTextAsString(false)
+	expectedText, err = targetText.GetTextAsString()
 	if err != nil {
 		t.Fail()
 	}
@@ -91,7 +91,7 @@ func TestHistoryShouldPopText(t *testing.T) {
 		t.Fail()
 	}
 
-	expectedText, err = targetText.GetTextAsString(false)
+	expectedText, err = targetText.GetTextAsString()
 	if err != nil {
 		t.Fail()
 	}
@@ -99,4 +99,10 @@ func TestHistoryShouldPopText(t *testing.T) {
 	if *expectedText != text1String {
 		t.Fail()
 	}
+}
+
+// Test helper function which is creating a text config mockup
+func GetHistoryTestTextConfigMockup() *TextConfig {
+	config := CreateDefaultTextConfig()
+	return &config
 }
