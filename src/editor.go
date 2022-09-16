@@ -21,6 +21,7 @@ type Editor struct {
 	cursor     *Cursor
 	history    *History
 	config     *Config
+	keybinds   *Keybinds
 }
 
 // Editor structure initialization funcation
@@ -86,6 +87,11 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 
 	editor.config = config
 
+	editor.keybinds = new(Keybinds)
+	if err := editor.keybinds.Init(editor.config); err != nil {
+		return err
+	}
+
 	if err := editor.redrawFull(); err != nil {
 		return err
 	}
@@ -124,39 +130,49 @@ func (editor *Editor) Start() error {
 
 // Handling function for the ConsoleEventKeyPress console event. The funcation returns a bool value indicating if the editor loop should be broken
 func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bool, error) {
-	if event.Key == KeyPrintable {
-		if err := editor.handleKeyPrintableCharacter(event.Char); err != nil {
-			return false, err
-		}
-
-		xOffset := editor.cursor.GetOffsetX() + 1
-		if err := editor.cursor.SetOffsetX(xOffset); err != nil {
-			return false, err
-		}
-
-		return false, editor.renderChanges()
-	}
-
 	var breakEditorLoop bool = false
 	var err error = nil
 
-	switch event.Key {
-	case KeyEnter:
-		err = editor.handleKeyEnter()
-	case KeyBackspace:
-		err = editor.handleKeyBackspace()
-	case KeyDelete:
-		err = editor.handleKeyDelete()
-	case KeyLeft:
-		err = editor.handleKeyLeftArrow()
-	case KeyRight:
-		err = editor.handleKeyRightArrow()
-	case KeyUp:
-		err = editor.handleKeyUpArrow()
-	case KeyDown:
-		err = editor.handleKeyDownArrow()
-	default:
-		err = errors.New("editor: can not handle given input")
+	// NOTE: The [Ctrl] key modifier was applied
+	if event.Modifier == ModifierCtrl {
+		switch event.Char {
+		case editor.keybinds.GetSaveKeybind():
+			err = editor.handleKeybindSave()
+		default:
+			err = errors.New("editor: can not handle given input")
+		}
+	}
+
+	// NOTE: The [Alt] key modifier was applied
+	if event.Modifier == ModifierAlt {
+		switch event.Char {
+		default:
+			err = errors.New("editor: can not handle given input")
+		}
+	}
+
+	// NOTE: The [Shift] or none key modifier applied
+	if event.Modifier == ModifierNone || event.Modifier == ModifierShift {
+		switch event.Key {
+		case KeyPrintable:
+			err = editor.handleKeyPrintableCharacter(event.Char)
+		case KeyEnter:
+			err = editor.handleKeyEnter()
+		case KeyBackspace:
+			err = editor.handleKeyBackspace()
+		case KeyDelete:
+			err = editor.handleKeyDelete()
+		case KeyLeft:
+			err = editor.handleKeyLeftArrow()
+		case KeyRight:
+			err = editor.handleKeyRightArrow()
+		case KeyUp:
+			err = editor.handleKeyUpArrow()
+		case KeyDown:
+			err = editor.handleKeyDownArrow()
+		default:
+			err = errors.New("editor: can not handle given input")
+		}
 	}
 
 	if err != nil {
@@ -642,5 +658,16 @@ func (editor *Editor) handleKeyPrintableCharacter(char rune) error {
 		return err
 	}
 
+	xOffset := editor.cursor.GetOffsetX()
+	if err := editor.cursor.SetOffsetX(xOffset + 1); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// [Ctrl] + [ASCII 0x20 - 0x7E] Handle file save keybind
+// TODO: Notification after widget implementation
+func (editor *Editor) handleKeybindSave() error {
+	return editor.SaveChanges()
 }
