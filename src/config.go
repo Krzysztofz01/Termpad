@@ -11,7 +11,8 @@ const (
 )
 
 // TODO: Extract specific categories to coresponding files
-//
+// TODO: Application version specific version migration
+
 // Structure representig the configuration properties insinde the termpad-config.json file
 type Config struct {
 	// NOTE: Global
@@ -19,6 +20,9 @@ type Config struct {
 	// NOTE: Editor
 
 	// NOTE: Display
+
+	// NOTE: Keybinds
+	KeyBindSave string `json:"keybinds_keyBindsSave"`
 
 	// NOTE: Text
 	UsePlatformSpecificEndOfLineSequence bool `json:"text_usePlatformSpecificEndOfLineSequence"`
@@ -51,6 +55,7 @@ func (config *Config) Init() error {
 
 	// NOTE: Config file not found, creating config file with defaut values
 	config.UsePlatformSpecificEndOfLineSequence = true
+	config.KeyBindSave = "s"
 
 	jsonConfig, err := json.Marshal(config)
 	if err != nil {
