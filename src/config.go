@@ -24,8 +24,7 @@ type Config struct {
 	// NOTE: Keybinds
 	KeyBindSave string `json:"keybinds_keyBindsSave"`
 
-	// NOTE: Text
-	UsePlatformSpecificEndOfLineSequence bool `json:"text_usePlatformSpecificEndOfLineSequence"`
+	TextConfiguration TextConfig `json:"text-configuration"`
 }
 
 // Config structure initialization function. The function is retriving the config file or creating a default one if not present
@@ -54,7 +53,7 @@ func (config *Config) Init() error {
 	}
 
 	// NOTE: Config file not found, creating config file with defaut values
-	config.UsePlatformSpecificEndOfLineSequence = true
+	config.TextConfiguration = CreateDefaultTextConfig()
 	config.KeyBindSave = "s"
 
 	jsonConfig, err := json.Marshal(config)
