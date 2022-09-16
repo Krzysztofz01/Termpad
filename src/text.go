@@ -2,20 +2,27 @@ package main
 
 import (
 	"errors"
+	"runtime"
 	"strings"
 )
 
 // A structure representing the text, which is a container for the List structures
-// TODO: Implement line concatenation feature
 type Text struct {
 	lines    []*Line
 	modified bool
 
-	// TODO: Implement preferences, preferences should contain information about usage of CRLF/LF
+	config *TextConfig
 }
 
 // Text structure initialization funcation
-func (text *Text) Init(textString string, newFile bool) error {
+func (text *Text) Init(textString string, newFile bool, textConfig *TextConfig) error {
+	if textConfig == nil {
+		defaultConfig := CreateDefaultTextConfig()
+		text.config = &defaultConfig
+	} else {
+		text.config = textConfig
+	}
+
 	// NOTE: Removing the 0x0D CR (Carriage Return)
 	textString = strings.Replace(textString, "\r", "", -1)
 
@@ -286,12 +293,22 @@ func (text *Text) GetCharacterByCursor(cursor *Cursor) (rune, error) {
 }
 
 // Return the text in form of single string
-func (text *Text) GetTextAsString(useCarriageReturn bool) (*string, error) {
+func (text *Text) GetTextAsString() (*string, error) {
 	builder := strings.Builder{}
 
 	lineSeparator := "\n"
-	if useCarriageReturn {
-		lineSeparator = "\r\n"
+	if text.config.UsePlatformSpecificEndOfLineSequence {
+		os := runtime.GOOS
+		switch os {
+		case "windows":
+			lineSeparator = "\r\n"
+		case "darwin":
+			lineSeparator = "\n"
+		case "linux":
+			lineSeparator = "\n"
+		default:
+			lineSeparator = "\n"
+		}
 	}
 
 	for index, line := range text.lines {
@@ -308,4 +325,16 @@ func (text *Text) GetTextAsString(useCarriageReturn bool) (*string, error) {
 
 	builderText := builder.String()
 	return &builderText, nil
+}
+
+// A structure containing the configuration for the text structure
+type TextConfig struct {
+	UsePlatformSpecificEndOfLineSequence bool `json:"use-platform-specific-eol-sequence"`
+}
+
+// Return a new isntance of the text configuration with default values
+func CreateDefaultTextConfig() TextConfig {
+	return TextConfig{
+		UsePlatformSpecificEndOfLineSequence: true,
+	}
 }
