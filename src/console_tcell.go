@@ -83,7 +83,7 @@ func (console *ConsoleTcell) WatchConsoleEvent() interface{} {
 		case *tcell.EventKey:
 			{
 				return ConsoleEventKeyPress{
-					Char:     event.Rune(),
+					Char:     console.translateCharacter(event),
 					Key:      console.translateNamedKey(event.Key()),
 					Modifier: console.translateModifierKey(event.Modifiers()),
 				}
@@ -153,9 +153,94 @@ func (console *ConsoleTcell) Dispose() error {
 	return nil
 }
 
+// Helper function used for converting implementation specific to contract specific character (rune) representation
+func (console *ConsoleTcell) translateCharacter(event *tcell.EventKey) rune {
+	switch event.Key() {
+	case tcell.KeyCtrlSpace:
+		return ' '
+	case tcell.KeyCtrlA:
+		return 'a'
+	case tcell.KeyCtrlB:
+		return 'b'
+	case tcell.KeyCtrlC:
+		return 'c'
+	case tcell.KeyCtrlD:
+		return 'd'
+	case tcell.KeyCtrlE:
+		return 'e'
+	case tcell.KeyCtrlF:
+		return 'f'
+	case tcell.KeyCtrlG:
+		return 'g'
+	case tcell.KeyCtrlJ:
+		return 'j'
+	case tcell.KeyCtrlK:
+		return 'k'
+	case tcell.KeyCtrlL:
+		return 'l'
+	case tcell.KeyCtrlN:
+		return 'n'
+	case tcell.KeyCtrlO:
+		return 'o'
+	case tcell.KeyCtrlP:
+		return 'p'
+	case tcell.KeyCtrlQ:
+		return 'q'
+	case tcell.KeyCtrlR:
+		return 'r'
+	case tcell.KeyCtrlS:
+		return 's'
+	case tcell.KeyCtrlT:
+		return 't'
+	case tcell.KeyCtrlU:
+		return 'u'
+	case tcell.KeyCtrlV:
+		return 'v'
+	case tcell.KeyCtrlW:
+		return 'w'
+	case tcell.KeyCtrlX:
+		return 'x'
+	case tcell.KeyCtrlY:
+		return 'y'
+	case tcell.KeyCtrlZ:
+		return 'z'
+	default:
+		return event.Rune()
+	}
+}
+
 // Helper funcation used for converting implementation specific to contract specific named key representation
 func (console *ConsoleTcell) translateNamedKey(key tcell.Key) NamedKey {
 	switch key {
+	case
+		tcell.KeyCtrlSpace,
+		tcell.KeyCtrlA,
+		tcell.KeyCtrlB,
+		tcell.KeyCtrlC,
+		tcell.KeyCtrlD,
+		tcell.KeyCtrlE,
+		tcell.KeyCtrlF,
+		tcell.KeyCtrlG,
+		tcell.KeyCtrlJ,
+		tcell.KeyCtrlK,
+		tcell.KeyCtrlL,
+		tcell.KeyCtrlN,
+		tcell.KeyCtrlO,
+		tcell.KeyCtrlP,
+		tcell.KeyCtrlQ,
+		tcell.KeyCtrlR,
+		tcell.KeyCtrlS,
+		tcell.KeyCtrlT,
+		tcell.KeyCtrlU,
+		tcell.KeyCtrlV,
+		tcell.KeyCtrlW,
+		tcell.KeyCtrlX,
+		tcell.KeyCtrlY,
+		tcell.KeyCtrlZ:
+		{
+			return KeyPrintable
+		}
+
 	case tcell.KeyRune:
 		return KeyPrintable
 	case tcell.KeyUp:
