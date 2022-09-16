@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"os"
-	"runtime"
 )
 
 // TODO: Verify if the cursor can be out of display now, when it is wrapping the console API
@@ -56,8 +55,14 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 
 	editor.console = console
 
+	if config == nil {
+		return errors.New("editor: invalid config reference")
+	}
+
+	editor.config = config
+
 	editor.text = new(Text)
-	if err := editor.text.Init(fileTextContent, !editor.fileExists); err != nil {
+	if err := editor.text.Init(fileTextContent, !editor.fileExists, &editor.config.TextConfiguration); err != nil {
 		return err
 	}
 
@@ -80,12 +85,6 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 	if err := editor.display.Init(editor.cursor, editorPadding, editor.console); err != nil {
 		return err
 	}
-
-	if config == nil {
-		return errors.New("editor: invalid config reference")
-	}
-
-	editor.config = config
 
 	editor.keybinds = new(Keybinds)
 	if err := editor.keybinds.Init(editor.config); err != nil {
@@ -216,14 +215,7 @@ func (editor *Editor) SaveChanges() error {
 		return err
 	}
 
-	useCarriageReturn := false
-	if editor.config.UsePlatformSpecificEndOfLineSequence {
-		if runtime.GOOS == "windows" {
-			useCarriageReturn = true
-		}
-	}
-
-	textContent, err := editor.text.GetTextAsString(useCarriageReturn)
+	textContent, err := editor.text.GetTextAsString()
 	if err != nil {
 		if fileErr := file.Close(); fileErr != nil {
 			return fileErr
