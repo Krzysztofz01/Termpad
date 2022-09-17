@@ -5,10 +5,10 @@ import (
 	"os"
 )
 
-// TODO: Verify if the cursor can be out of display now, when it is wrapping the console API
+// TODO: The resizing is making a ,,pyramide'', this bug can be fixed during the left/top padding drawing-funcation revist
+// TODO: Verify if the cursor can be out of display now, when it is wrapping the console API (Edit: It seems fine for now)
 // TODO: Move key handler to helper struct
-// TODO: Better wrapper approach for keeping sync during operation on both internal and console API components
-// TODO: Add support for cursor style preferences
+// TODO: Better wrapper approach for keeping sync during operation on both internal and console API components (Edit: Done for cursor and display)
 
 // Structure representing the editor instance which is a warapper for text I/O
 type Editor struct {
@@ -67,7 +67,7 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 	}
 
 	editor.cursor = new(Cursor)
-	if err := editor.cursor.Init(0, 0, console); err != nil {
+	if err := editor.cursor.Init(0, 0, console, &editor.config.CursorConfiguration); err != nil {
 		return err
 	}
 

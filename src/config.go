@@ -24,6 +24,8 @@ type Config struct {
 	// NOTE: Keybinds
 	KeyBindSave string `json:"keybinds_keyBindsSave"`
 
+	CursorConfiguration CursorConfig `json:"cursor-configuration"`
+
 	TextConfiguration TextConfig `json:"text-configuration"`
 }
 
@@ -53,6 +55,7 @@ func (config *Config) Init() error {
 	}
 
 	// NOTE: Config file not found, creating config file with defaut values
+	config.CursorConfiguration = CreateDefaultCursorConfig()
 	config.TextConfiguration = CreateDefaultTextConfig()
 	config.KeyBindSave = "s"
 
