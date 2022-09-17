@@ -134,12 +134,22 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 
 	// NOTE: The [Ctrl] key modifier was applied
 	if event.Modifier == ModifierCtrl {
-		switch event.Char {
-		case editor.keybinds.GetSaveKeybind():
-			err = editor.handleKeybindSave()
-		default:
-			err = errors.New("editor: can not handle given input")
+		if event.Key == KeyPrintable {
+			switch event.Char {
+			case editor.keybinds.GetSaveKeybind():
+				err = editor.handleKeybindSave()
+			default:
+				err = errors.New("editor: can not handle given input")
+			}
+		} else {
+			switch event.Key {
+			case KeyLeft:
+				err = editor.handleKeysCtrlArrowLeft()
+			default:
+				err = errors.New("editor: can not handle given input")
+			}
 		}
+
 	}
 
 	// NOTE: The [Alt] key modifier was applied
@@ -658,7 +668,47 @@ func (editor *Editor) handleKeyPrintableCharacter(char rune) error {
 	return nil
 }
 
-// [Ctrl] + [ASCII 0x20 - 0x7E] Handle file save keybind
+// [Ctrl] + [<] Handle multi-key left jump to next word
+func (editor *Editor) handleKeysCtrlArrowLeft() error {
+	xOffset := editor.cursor.GetOffsetX()
+	yOffset := editor.cursor.GetOffsetY()
+
+	if xOffset == 0 && yOffset == 0 {
+		return nil
+	}
+
+	if xOffset == 0 && yOffset > 0 {
+		yOffset -= 1
+		targetXLength, err := editor.text.GetLineLengthByOffset(yOffset)
+		if err != nil {
+			return err
+		}
+
+		return editor.cursor.SetOffsets(targetXLength, yOffset)
+	}
+
+	xOffset -= 1
+	targetXIndex := -1
+
+	for xIndex := xOffset; xIndex > 0; xIndex -= 1 {
+		char, err := editor.text.GetCharacterByOffsets(xIndex, yOffset)
+		if err != nil {
+			return err
+		}
+
+		if char == ' ' {
+			if targetXIndex != -1 {
+				return editor.cursor.SetOffsets(targetXIndex, yOffset)
+			}
+		} else {
+			targetXIndex = xIndex
+		}
+	}
+
+	return editor.cursor.SetOffsets(0, yOffset)
+}
+
+// [Ctrl] + [ASCII 0x20 - 0x7E (defined by configuration)] Handle file save keybind
 // TODO: Notification after widget implementation
 func (editor *Editor) handleKeybindSave() error {
 	return editor.SaveChanges()
