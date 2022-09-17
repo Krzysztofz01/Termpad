@@ -87,7 +87,7 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 	}
 
 	editor.keybinds = new(Keybinds)
-	if err := editor.keybinds.Init(editor.config); err != nil {
+	if err := editor.keybinds.Init(&editor.config.KeybindsConfiguration); err != nil {
 		return err
 	}
 
