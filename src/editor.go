@@ -138,6 +138,8 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 			switch event.Char {
 			case editor.keybinds.GetSaveKeybind():
 				err = editor.handleKeybindSave()
+			case editor.keybinds.GetExitKeybind():
+				breakEditorLoop, err = editor.handleKeybindExit()
 			default:
 				err = errors.New("editor: can not handle given input")
 			}
@@ -757,4 +759,11 @@ func (editor *Editor) handleKeysCtrlArrowRight() error {
 // TODO: Notification after widget implementation
 func (editor *Editor) handleKeybindSave() error {
 	return editor.SaveChanges()
+}
+
+// [Ctrl] + [ASCII 0x20 - 0x7E (defined by configuration)] Handle program exit keybind. The funcation
+// is returning a bool value that idicates if the program loop should be broken.
+// TODO: Exit confirmation on un-saved changes
+func (editor *Editor) handleKeybindExit() (bool, error) {
+	return true, nil
 }
