@@ -8,7 +8,7 @@ func TestDisplayShouldInitialzieForValidParams(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console); err != nil {
+	if err := cursor.Init(0, 0, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -22,7 +22,7 @@ func TestDisplayShouldNotInitialzieForInvalidParams(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console); err != nil {
+	if err := cursor.Init(0, 0, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -36,7 +36,7 @@ func TestDisplayShouldCalculateCorrectHeightBoundaries(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(5, 12, console); err != nil {
+	if err := cursor.Init(5, 12, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -58,7 +58,7 @@ func TestDisplayShouldCalculateCorrectWidthBoundaries(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(15, 7, console); err != nil {
+	if err := cursor.Init(15, 7, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -80,7 +80,7 @@ func TestDisplayShouldCalculateCorrectHeightAndWidthBoundaries(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(21, 17, console); err != nil {
+	if err := cursor.Init(21, 17, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -102,7 +102,7 @@ func TestDisplayShouldIndicateInBoundries(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console); err != nil {
+	if err := cursor.Init(0, 0, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -124,7 +124,7 @@ func TestDisplayShouldIndicateOutOfBoundriesForHeight(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console); err != nil {
+	if err := cursor.Init(0, 0, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -146,7 +146,7 @@ func TestDisplayShouldIndicateOutOfBoundriesForWidth(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console); err != nil {
+	if err := cursor.Init(0, 0, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -168,7 +168,7 @@ func TestDisplayShouldIndicateOutOfBoundriesForHeightAndWidth(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console); err != nil {
+	if err := cursor.Init(0, 0, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -190,7 +190,7 @@ func TestDisplayShouldReturnCorrectSpecifiedPadding(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console); err != nil {
+	if err := cursor.Init(0, 0, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -217,7 +217,7 @@ func TestDisplayShouldReturnCorrectUnspecifiedPadding(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console); err != nil {
+	if err := cursor.Init(0, 0, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -239,7 +239,7 @@ func TestDisplayShouldReturnFullSize(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console); err != nil {
+	if err := cursor.Init(0, 0, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -263,7 +263,7 @@ func TestDisplayShouldReturnCorrectTextSizeForInitializedPadding(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console); err != nil {
+	if err := cursor.Init(0, 0, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -292,7 +292,7 @@ func TestDisplayShouldReturnCorrectTextSizeForUninitializedPadding(t *testing.T)
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console); err != nil {
+	if err := cursor.Init(0, 0, console, nil); err != nil {
 		t.Fail()
 	}
 
