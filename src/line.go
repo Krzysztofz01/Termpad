@@ -112,7 +112,7 @@ func (line *Line) GetBufferCharacterByOffset(xOffset int) (rune, error) {
 		return 0, errors.New("line: invalid x (horizontal) negative offset requested to get")
 	}
 
-	if xOffset > len(line.buffer) {
+	if xOffset >= len(line.buffer) {
 		return 0, errors.New("line: invalid x (horizontal) out of bound offset requested to get")
 	}
 
