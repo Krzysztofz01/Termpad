@@ -30,15 +30,18 @@ func main() {
 	editor := new(Editor)
 	if err := editor.Init(targetFilePath, console, config); err != nil {
 		// TODO: Panic - Failed to create editor instance notification
+		console.Dispose()
 		os.Exit(1)
 		return
 	}
 
 	if err := editor.Start(); err != nil {
 		// TODO: Handle errors while editing
+		console.Dispose()
 		os.Exit(1)
 		return
 	}
 
+	console.Dispose()
 	os.Exit(0)
 }

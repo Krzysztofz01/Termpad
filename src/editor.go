@@ -764,6 +764,7 @@ func (editor *Editor) handleKeybindSave() error {
 // [Ctrl] + [ASCII 0x20 - 0x7E (defined by configuration)] Handle program exit keybind. The funcation
 // is returning a bool value that idicates if the program loop should be broken.
 // TODO: Exit confirmation on un-saved changes
+// TODO: Implement ,,alternate screen” in order to restore previous console content after program exit
 func (editor *Editor) handleKeybindExit() (bool, error) {
 	return true, nil
 }
