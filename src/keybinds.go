@@ -5,26 +5,34 @@ import (
 	"strings"
 )
 
-// TODO: Move config structure into this file
 // TODO: Implement unit tests
 
 // Structure representing the editor keyboard key-bindings for various operations
 type Keybinds struct {
 	save   rune
+	exit   rune
 	keyMap map[rune]bool
+	config *KeybindsConfig
 }
 
 // Editor keybinds structure initialization function
-func (keybinds *Keybinds) Init(config *Config) error {
-	if config == nil {
-		return errors.New("keybinds: invalid config reference")
+func (keybinds *Keybinds) Init(keybindsConfig *KeybindsConfig) error {
+	if keybindsConfig == nil {
+		defaultConfig := CreateDefaultKeybindsConfig()
+		keybinds.config = &defaultConfig
+	} else {
+		keybinds.config = keybindsConfig
 	}
 
 	keybinds.keyMap = make(map[rune]bool)
-
 	var err error = nil
 
-	keybinds.save, err = keybinds.parseKeybindString(config.KeyBindSave)
+	keybinds.save, err = keybinds.parseKeybindString(keybinds.config.SaveKeybind)
+	if err != nil {
+		return err
+	}
+
+	keybinds.exit, err = keybinds.parseKeybindString(keybinds.config.ExitKeybind)
 	if err != nil {
 		return err
 	}
@@ -56,4 +64,23 @@ func (keybind *Keybinds) parseKeybindString(keybindValue string) (rune, error) {
 // Return the rune (that entered with [Ctrl] key) will affect in saving the editor changes
 func (keybind *Keybinds) GetSaveKeybind() rune {
 	return keybind.save
+}
+
+// Return the rune (that entered with [Ctrl] key) will affect in exiting the program
+func (keybind *Keybinds) GetExitKeybind() rune {
+	return keybind.exit
+}
+
+// A structure containing the configuration for the keybinds structure
+type KeybindsConfig struct {
+	SaveKeybind string `json:"keybind-save"`
+	ExitKeybind string `json:"keybind-exit"`
+}
+
+// Return a new isntance of the keybinds configuration with default values
+func CreateDefaultKeybindsConfig() KeybindsConfig {
+	return KeybindsConfig{
+		SaveKeybind: "s",
+		ExitKeybind: "x",
+	}
 }
