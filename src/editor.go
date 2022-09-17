@@ -145,6 +145,8 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 			switch event.Key {
 			case KeyLeft:
 				err = editor.handleKeysCtrlArrowLeft()
+			case KeyRight:
+				err = editor.handleKeysCtrlArrowRight()
 			default:
 				err = errors.New("editor: can not handle given input")
 			}
@@ -698,14 +700,57 @@ func (editor *Editor) handleKeysCtrlArrowLeft() error {
 
 		if char == ' ' {
 			if targetXIndex != -1 {
-				return editor.cursor.SetOffsets(targetXIndex, yOffset)
+				return editor.cursor.SetOffsetX(targetXIndex)
 			}
 		} else {
 			targetXIndex = xIndex
 		}
 	}
 
-	return editor.cursor.SetOffsets(0, yOffset)
+	return editor.cursor.SetOffsetX(0)
+}
+
+// [Ctrl] + [>] Handle multi-key right jump to next word
+func (editor *Editor) handleKeysCtrlArrowRight() error {
+	xOffset := editor.cursor.GetOffsetX()
+	yOffset := editor.cursor.GetOffsetY()
+	yOffsetMax := editor.text.GetLineCount() - 1
+
+	currentXLength, err := editor.text.GetLineLengthByOffset(yOffset)
+	if err != nil {
+		return err
+	}
+
+	if xOffset == currentXLength && yOffset == yOffsetMax {
+		return nil
+	}
+
+	// NOTE: Other text editors jump to next word after switching to line below.
+	// The current implementation always jumps to the start of the line, just like
+	// the left-jump always jumps to end on switching to the line above.
+	if xOffset == currentXLength && yOffset < yOffsetMax {
+		yOffset += 1
+		return editor.cursor.SetOffsets(0, yOffset)
+	}
+
+	targetSpacePassed := false
+
+	for xIndex := xOffset; xIndex < currentXLength; xIndex += 1 {
+		char, err := editor.text.GetCharacterByOffsets(xIndex, yOffset)
+		if err != nil {
+			return err
+		}
+
+		if char == ' ' {
+			targetSpacePassed = true
+		} else {
+			if targetSpacePassed {
+				return editor.cursor.SetOffsetX(xIndex)
+			}
+		}
+	}
+
+	return editor.cursor.SetOffsetX(currentXLength)
 }
 
 // [Ctrl] + [ASCII 0x20 - 0x7E (defined by configuration)] Handle file save keybind
