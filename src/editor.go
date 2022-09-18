@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// TODO: The resizing is making a ,,pyramide'', this bug can be fixed during the left/top padding drawing-funcation revist
+// TODO: The display shifting is not working. The ,,pyramide'' bug was resolved. The left/top padding can be added during the bug fix revisit
 // TODO: Verify if the cursor can be out of display now, when it is wrapping the console API (Edit: It seems fine for now)
 // TODO: Move key handler to helper struct
 // TODO: Better wrapper approach for keeping sync during operation on both internal and console API components (Edit: Done for cursor and display)
@@ -197,22 +197,12 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 
 // Handling function for the ConsoleEventResize console event. The funcation returns a bool value indicating if the editor loop should be broken
 func (editor *Editor) handleConsoleEventResize(event ConsoleEventResize) (bool, error) {
-	applyRedraw := false
-
-	if editor.display.HasSizeChanged() {
-		if err := editor.display.Resize(); err != nil {
-			return false, err
-		}
-
-		applyRedraw = true
-	}
-
-	if !editor.display.CursorInBoundries() {
-		applyRedraw = true
-	}
-
-	if !applyRedraw {
+	if !editor.display.HasSizeChanged(event.Width, event.Height) {
 		return false, nil
+	}
+
+	if err := editor.display.Resize(event.Width, event.Height); err != nil {
+		return false, err
 	}
 
 	if err := editor.redrawFull(); err != nil {
