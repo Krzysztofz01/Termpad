@@ -72,7 +72,7 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 	}
 
 	editor.history = new(History)
-	if err := editor.history.Init(); err != nil {
+	if err := editor.history.Init(&editor.config.HistoryConfiguration); err != nil {
 		return err
 	}
 
