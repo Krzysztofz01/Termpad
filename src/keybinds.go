@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-// TODO: Implement unit tests
-
 // Structure representing the editor keyboard key-bindings for various operations
 type Keybinds struct {
 	save   rune
