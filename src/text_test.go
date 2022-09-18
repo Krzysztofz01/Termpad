@@ -310,7 +310,7 @@ func TestTextShouldBreaklineInsideLine(t *testing.T) {
 	}
 }
 
-func TestTextShouldCombinelineForValidCursorPosition(t *testing.T) {
+func TestTextShouldCombineLineForValidCursorPosition(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
@@ -338,7 +338,7 @@ func TestTextShouldCombinelineForValidCursorPosition(t *testing.T) {
 	}
 }
 
-func TestTextShouldCombinelineForInvalidCursorPosition(t *testing.T) {
+func TestTextShouldCombineLineForInvalidCursorPosition(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
 
 	text := new(Text)
@@ -356,7 +356,33 @@ func TestTextShouldCombinelineForInvalidCursorPosition(t *testing.T) {
 	}
 }
 
-// TODO: Implement unit tests for line combining with the lineStepDown set to true
+func TestTextShouldCombineLineWithStepDownForValidCursorPosition(t *testing.T) {
+	textContent := "First line\nSecond line\nThird line"
+
+	text := new(Text)
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
+		t.Fail()
+	}
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 1, CreateConsoleMockup(), nil); err != nil {
+		t.Fail()
+	}
+
+	if err := text.CombineLine(cursor, true); err != nil {
+		t.Fail()
+	}
+
+	result, err := text.GetTextAsString()
+	if err != nil {
+		t.Fail()
+	}
+
+	expectedTextContent := "First line\nSecond lineThird line"
+	if *result != expectedTextContent {
+		t.Fail()
+	}
+}
 
 func TestTextShouldGetCharacter(t *testing.T) {
 	textContent := "First line\nSecond line\nThird line"
