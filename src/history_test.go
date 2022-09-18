@@ -4,14 +4,21 @@ import "testing"
 
 func TestHistoryShouldInit(t *testing.T) {
 	history := new(History)
-	if err := history.Init(); err != nil {
+	if err := history.Init(nil); err != nil {
+		t.Fail()
+	}
+}
+
+func TestHistoryShouldNotInitForInvalidConfig(t *testing.T) {
+	history := new(History)
+	if err := history.Init(&HistoryConfig{HistoryStackSize: 0}); err == nil {
 		t.Fail()
 	}
 }
 
 func TestHistoryShouldPushText(t *testing.T) {
 	history := new(History)
-	if err := history.Init(); err != nil {
+	if err := history.Init(nil); err != nil {
 		t.Fail()
 	}
 
@@ -44,7 +51,7 @@ func TestHistoryShouldPushText(t *testing.T) {
 
 func TestHistoryShouldPopText(t *testing.T) {
 	history := new(History)
-	if err := history.Init(); err != nil {
+	if err := history.Init(nil); err != nil {
 		t.Fail()
 	}
 

@@ -2,20 +2,28 @@ package main
 
 import "errors"
 
-// TODO: Extract to preference
-const (
-	historyStackSize = 512
-)
-
 // Structure representing the edistors text history stack (LIFO)
 type History struct {
 	nodes []Text
 	count int
+
+	config *HistoryConfig
 }
 
 // History structure initialization function
-func (history *History) Init() error {
-	history.nodes = make([]Text, historyStackSize)
+func (history *History) Init(historyConfig *HistoryConfig) error {
+	if historyConfig == nil {
+		defaultConfig := CreateDefaultHistoryConfig()
+		history.config = &defaultConfig
+	} else {
+		history.config = historyConfig
+	}
+
+	if history.config.HistoryStackSize <= 0 {
+		return errors.New("history: invalid stack size specified in the configuration")
+	}
+
+	history.nodes = make([]Text, history.config.HistoryStackSize)
 	history.count = 0
 
 	return nil
@@ -23,7 +31,7 @@ func (history *History) Init() error {
 
 // Add the given state of text to the history stack
 func (history *History) Push(text Text) error {
-	if history.count < historyStackSize {
+	if history.count < history.config.HistoryStackSize {
 		history.nodes[history.count] = text
 		history.count += 1
 
@@ -51,4 +59,16 @@ func (history *History) Pop() (*Text, error) {
 // Return a bool value indicating if there are any text structs on the history stack
 func (history *History) CanPop() bool {
 	return history.count > 0
+}
+
+// A structure containing the configuration for the history structure
+type HistoryConfig struct {
+	HistoryStackSize int `json:"history-stack-size"`
+}
+
+// Return a new isntance of the text configuration with default values
+func CreateDefaultHistoryConfig() HistoryConfig {
+	return HistoryConfig{
+		HistoryStackSize: 256,
+	}
 }
