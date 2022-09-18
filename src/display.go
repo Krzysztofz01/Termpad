@@ -40,18 +40,17 @@ func (display *Display) Init(cursor *Cursor, padding *Padding, console Console) 
 	}
 
 	display.console = console
+	width, hight := display.console.GetSize()
 
-	if err := display.Resize(); err != nil {
+	if err := display.Resize(width, hight); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Function is used to recalculate the size and all boundaries/offsets of the display (currently visible content)
-func (display *Display) Resize() error {
-	width, height := display.console.GetSize()
-
+// Function is used to recalculate the size and all boundaries/offsets of the display, according to the given width and height
+func (display *Display) Resize(width int, height int) error {
 	if width <= 0 {
 		return errors.New("display: invalid display width value")
 	}
@@ -89,10 +88,8 @@ func (display *Display) Resize() error {
 	return nil
 }
 
-// Return a bool value indicating whether the console size specified by the underlying console API has changed (not the size of the display)
-func (display *Display) HasSizeChanged() bool {
-	width, height := display.console.GetSize()
-
+// Return a bool value indicating whether the console size specified by the given width and height has changed (not the size of the display)
+func (display *Display) HasSizeChanged(width int, height int) bool {
 	if display.width != width {
 		return true
 	}

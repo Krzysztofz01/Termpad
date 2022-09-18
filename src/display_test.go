@@ -32,6 +32,88 @@ func TestDisplayShouldNotInitialzieForInvalidParams(t *testing.T) {
 	}
 }
 
+func TestDisplayShouldResizeForValidUpdatedSize(t *testing.T) {
+	console := CreateConsoleMockup()
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 0, console, nil); err != nil {
+		t.Fail()
+	}
+
+	display := new(Display)
+	if err := display.Init(cursor, nil, console); err != nil {
+		t.Fail()
+	}
+
+	if err := display.Resize(20, 30); err != nil {
+		t.Fail()
+	}
+
+	width, height := display.GetFullDisplaySize()
+
+	if width != 20 {
+		t.Fail()
+	}
+
+	if height != 30 {
+		t.Fail()
+	}
+}
+
+func TestDisplayShouldNotResizeForInvalidUpdatedSize(t *testing.T) {
+	console := CreateConsoleMockup()
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 0, console, nil); err != nil {
+		t.Fail()
+	}
+
+	display := new(Display)
+	if err := display.Init(cursor, nil, console); err != nil {
+		t.Fail()
+	}
+
+	if err := display.Resize(-1, 0); err == nil {
+		t.Fail()
+	}
+}
+
+func TestDisplayHasSizeChangedShouldCorrectlyIndicateChangedSize(t *testing.T) {
+	console := CreateConsoleMockup()
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 0, console, nil); err != nil {
+		t.Fail()
+	}
+
+	display := new(Display)
+	if err := display.Init(cursor, nil, console); err != nil {
+		t.Fail()
+	}
+
+	if !display.HasSizeChanged(20, 30) {
+		t.Fail()
+	}
+}
+
+func TestDisplayHasSizeChangedShouldCorrectlyIndicateUnchangedSize(t *testing.T) {
+	console := CreateConsoleMockup()
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 0, console, nil); err != nil {
+		t.Fail()
+	}
+
+	display := new(Display)
+	if err := display.Init(cursor, nil, console); err != nil {
+		t.Fail()
+	}
+
+	if display.HasSizeChanged(10, 10) {
+		t.Fail()
+	}
+}
+
 func TestDisplayShouldCalculateCorrectHeightBoundaries(t *testing.T) {
 	console := CreateConsoleMockup()
 
