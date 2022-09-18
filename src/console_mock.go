@@ -1,5 +1,10 @@
 package main
 
+const (
+	MockConsoleWidth  = 10
+	MockConsoleHeight = 10
+)
+
 // Structure implementing the console contract, used as a mockup for testing purposes
 type ConsoleMock struct {
 }
@@ -34,15 +39,15 @@ func (console *ConsoleMock) WatchConsoleEvent() interface{} {
 }
 
 func (console *ConsoleMock) GetWidth() int {
-	return 0
+	return MockConsoleWidth
 }
 
 func (console *ConsoleMock) GetHeight() int {
-	return 0
+	return MockConsoleHeight
 }
 
 func (console *ConsoleMock) GetSize() (int, int) {
-	return 10, 10
+	return MockConsoleWidth, MockConsoleHeight
 }
 
 func (console *ConsoleMock) SetCursorStyle(cursorStyle CursorStyle) error {
