@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// TODO: Implement function that will insert multiple characters as array. This function
+// would be very usefull for implementing clipboard pasting.
+
 // A structure representing the text, which is a container for the List structures
 type Text struct {
 	lines    []*Line
@@ -66,7 +69,7 @@ func (text *Text) GetLineLengthByOffset(yOffset int) (int, error) {
 		return 0, errors.New("text: invalid y (vertical) negative offset requested to get")
 	}
 
-	if yOffset > len(text.lines) {
+	if yOffset >= len(text.lines) {
 		return 0, errors.New("text: invalid y (vertical) out of bound offset requested to get")
 	}
 
