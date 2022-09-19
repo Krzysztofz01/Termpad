@@ -62,26 +62,34 @@ func (display *Display) Resize(width int, height int) error {
 	display.width = width
 	display.height = height
 
+	return display.RecalculateBoundaries()
+}
+
+// Function is used to recalculate the boundaries based on the cursor position and current display size
+func (display *Display) RecalculateBoundaries() error {
 	xOffset := display.cursor.GetOffsetX()
 	yOffset := display.cursor.GetOffsetY()
 
+	display.xCalculatedBoundary = 0
+	display.yCalculatedBoundary = 0
+
 	// NOTE: Right side overflow
-	for xOffset > display.xCalculatedBoundary+display.width {
+	for xOffset+1 >= display.width+display.xCalculatedBoundary {
 		display.xCalculatedBoundary += 1
 	}
 
 	// NOTE: Left side overflow
-	for xOffset < display.xCalculatedBoundary {
+	for display.xCalculatedBoundary > 0 && xOffset < display.xCalculatedBoundary {
 		display.xCalculatedBoundary -= 1
 	}
 
 	// NOTE: Top side overflow
-	for yOffset > display.yCalculatedBoundary+display.height {
+	for yOffset+1 >= display.height+display.yCalculatedBoundary {
 		display.yCalculatedBoundary += 1
 	}
 
 	// NOTE: Down side overflow
-	for yOffset < display.yCalculatedBoundary {
+	for display.yCalculatedBoundary > 0 && yOffset < display.yCalculatedBoundary {
 		display.yCalculatedBoundary -= 1
 	}
 
@@ -137,7 +145,7 @@ func (display *Display) CursorInBoundries() bool {
 	yOffset := display.cursor.GetOffsetY()
 
 	// NOTE: Right side overflow
-	if xOffset > display.xCalculatedBoundary+display.width {
+	if xOffset+1 >= display.width+display.xCalculatedBoundary {
 		return false
 	}
 
@@ -147,7 +155,7 @@ func (display *Display) CursorInBoundries() bool {
 	}
 
 	// NOTE: Top side overflow
-	if yOffset > display.yCalculatedBoundary+display.height {
+	if yOffset+1 >= display.height+display.yCalculatedBoundary {
 		return false
 	}
 

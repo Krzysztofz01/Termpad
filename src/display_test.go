@@ -131,7 +131,7 @@ func TestDisplayShouldCalculateCorrectHeightBoundaries(t *testing.T) {
 		t.Fail()
 	}
 
-	if display.GetYOffsetShift() != 2 {
+	if display.GetYOffsetShift() != 4 {
 		t.Fail()
 	}
 }
@@ -149,7 +149,7 @@ func TestDisplayShouldCalculateCorrectWidthBoundaries(t *testing.T) {
 		t.Fail()
 	}
 
-	if display.GetXOffsetShift() != 5 {
+	if display.GetXOffsetShift() != 7 {
 		t.Fail()
 	}
 
@@ -171,11 +171,11 @@ func TestDisplayShouldCalculateCorrectHeightAndWidthBoundaries(t *testing.T) {
 		t.Fail()
 	}
 
-	if display.GetXOffsetShift() != 11 {
+	if display.GetXOffsetShift() != 13 {
 		t.Fail()
 	}
 
-	if display.GetYOffsetShift() != 7 {
+	if display.GetYOffsetShift() != 9 {
 		t.Fail()
 	}
 }
