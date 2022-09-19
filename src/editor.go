@@ -5,10 +5,8 @@ import (
 	"os"
 )
 
-// TODO: The display shifting is not working. The ,,pyramide'' bug was resolved. The left/top padding can be added during the bug fix revisit
-// TODO: Verify if the cursor can be out of display now, when it is wrapping the console API (Edit: It seems fine for now)
 // TODO: Move key handler to helper struct
-// TODO: Better wrapper approach for keeping sync during operation on both internal and console API components (Edit: Done for cursor and display)
+// TODO: Update redraw after display left/bottom padding feature is added
 
 // Structure representing the editor instance which is a warapper for text I/O
 type Editor struct {
@@ -192,6 +190,16 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 		return false, err
 	}
 
+	if !editor.display.CursorInBoundries() {
+		if err := editor.display.RecalculateBoundaries(); err != nil {
+			return false, err
+		}
+
+		if err := editor.redrawFull(); err != nil {
+			return false, err
+		}
+	}
+
 	return breakEditorLoop, editor.renderChanges()
 }
 
@@ -247,6 +255,14 @@ func (editor *Editor) SaveChanges() error {
 
 // Request a render of all changes to the screen of the underlying console API
 func (editor *Editor) renderChanges() error {
+	// NOTE: It does not ,, feel good'' to invoke this func in the render func, but on the other hand,
+	// the cursor position correct is console API related, just like commiting the content changes.
+	xShift := editor.display.GetXOffsetShift()
+	yShift := editor.display.GetYOffsetShift()
+	if err := editor.cursor.CorrectUnderlyingConsolePositionDifference(xShift, yShift); err != nil {
+		return err
+	}
+
 	return editor.console.Commit()
 }
 
@@ -264,7 +280,7 @@ func (editor *Editor) redrawFull() error {
 	for ycIndex := 0; ycIndex < ycLength-yPadding; ycIndex += 1 {
 		ytIndex := ycIndex + yShift
 
-		if ycIndex < ytLength {
+		if ytIndex < ytLength {
 			xtLength, err := editor.text.GetLineLengthByOffset(ytIndex)
 			if err != nil {
 				return err
@@ -339,7 +355,7 @@ func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
 }
 
 // Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines (including the current) below the cursor are affected.
-// TODO: The ycIndex < ytLength condition prevents the overwrting of previous screen data
+// TODO: The ycIndex < ytLength condition prevents the overwrting of previous screen data (Edit: ycIndex patched to ytIndex, does this problem still exist?)
 func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
 	if !editor.display.CursorInBoundries() && fullRedrawFallback {
 		return editor.redrawFull()
@@ -355,7 +371,7 @@ func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
 	for ycIndex := editor.cursor.GetOffsetY() - yShift; ycIndex < ycLength-yPadding; ycIndex += 1 {
 		ytIndex := ycIndex + yShift
 
-		if ycIndex < ytLength {
+		if ytIndex < ytLength {
 			xtLength, err := editor.text.GetLineLengthByOffset(ytIndex)
 			if err != nil {
 				return err
@@ -394,10 +410,6 @@ func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
 // NOTE: This section contains all the key-specific handler functions
 
 // [<] Handle left arrow key. Handling the movement of the cursor to the left, considering both x and y axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
 func (editor *Editor) handleKeyLeftArrow() error {
 	xOffset := editor.cursor.GetOffsetX()
 	if xOffset > 0 {
@@ -433,10 +445,6 @@ func (editor *Editor) handleKeyLeftArrow() error {
 }
 
 // [>] Handle right arrow key. Handling the movement of the cursor to the right, considering both x and y axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
 func (editor *Editor) handleKeyRightArrow() error {
 	xOffset := editor.cursor.GetOffsetX()
 
@@ -469,10 +477,6 @@ func (editor *Editor) handleKeyRightArrow() error {
 }
 
 // [/\] Handle up arrow key. Handling the movement of the cursor to the line above, considering both y and x axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
 func (editor *Editor) handleKeyUpArrow() error {
 	yOffset := editor.cursor.GetOffsetY()
 	if yOffset == 0 {
@@ -502,10 +506,6 @@ func (editor *Editor) handleKeyUpArrow() error {
 }
 
 // [\/] Handle down arrow key. Handling the movement of the cursor to the line below, considering both y and x axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
 func (editor *Editor) handleKeyDownArrow() error {
 	yOffset := editor.cursor.GetOffsetY()
 	if yOffset == editor.text.GetLineCount()-1 {
