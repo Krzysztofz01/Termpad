@@ -89,6 +89,26 @@ func (cursor *Cursor) SetOffsets(xOffset int, yOffset int) error {
 	return nil
 }
 
+// Apply a position difference to the x (horizontal) and y (vertical) offsets ONLY to the cursor of the underlying console API. This out of sync cursor
+// positions are caused by the fact that the content position can be changed due to console/window resize
+func (cursor *Cursor) CorrectUnderlyingConsolePositionDifference(xDiff int, yDiff int) error {
+	xOffset := cursor.xOffset - xDiff
+	if xOffset < 0 {
+		return errors.New("cursor: invalid position for underlying console cursor position difference")
+	}
+
+	yOffset := cursor.yOffset - yDiff
+	if yOffset < 0 {
+		return errors.New("cursor: invalid position for underlying console cursor position difference")
+	}
+
+	if err := cursor.console.SetCursorPosition(xOffset, yOffset); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Helper function used to apply cursor style to underlying console API
 func (cursor *Cursor) applyCursorStyle() error {
 	style := strings.ToLower(cursor.config.CursorStyle)
