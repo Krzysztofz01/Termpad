@@ -277,7 +277,7 @@ func TestDisplayShouldReturnCorrectSpecifiedPadding(t *testing.T) {
 	}
 
 	padding := new(Padding)
-	if err := padding.Init(0, 4, 0, 8); err != nil {
+	if err := padding.Init(2, 4, 3, 6); err != nil {
 		t.Fail()
 	}
 
@@ -286,11 +286,27 @@ func TestDisplayShouldReturnCorrectSpecifiedPadding(t *testing.T) {
 		t.Fail()
 	}
 
-	if display.GetXOffsetPadding() != 8 {
+	if display.GetXOffsetPadding() != 9 {
 		t.Fail()
 	}
 
-	if display.GetYOffsetPadding() != 4 {
+	if display.GetXLeftOffsetPadding() != 3 {
+		t.Fail()
+	}
+
+	if display.GetXRightOffsetPadding() != 6 {
+		t.Fail()
+	}
+
+	if display.GetYOffsetPadding() != 6 {
+		t.Fail()
+	}
+
+	if display.GetYTopOffsetPadding() != 2 {
+		t.Fail()
+	}
+
+	if display.GetYBottomOffsetPadding() != 4 {
 		t.Fail()
 	}
 }
@@ -312,7 +328,23 @@ func TestDisplayShouldReturnCorrectUnspecifiedPadding(t *testing.T) {
 		t.Fail()
 	}
 
+	if display.GetXLeftOffsetPadding() != 0 {
+		t.Fail()
+	}
+
+	if display.GetXRightOffsetPadding() != 0 {
+		t.Fail()
+	}
+
 	if display.GetYOffsetPadding() != 0 {
+		t.Fail()
+	}
+
+	if display.GetYTopOffsetPadding() != 0 {
+		t.Fail()
+	}
+
+	if display.GetYBottomOffsetPadding() != 0 {
 		t.Fail()
 	}
 }
@@ -350,7 +382,7 @@ func TestDisplayShouldReturnCorrectTextSizeForInitializedPadding(t *testing.T) {
 	}
 
 	padding := new(Padding)
-	if err := padding.Init(0, 4, 0, 8); err != nil {
+	if err := padding.Init(2, 4, 1, 8); err != nil {
 		t.Fail()
 	}
 
@@ -361,11 +393,11 @@ func TestDisplayShouldReturnCorrectTextSizeForInitializedPadding(t *testing.T) {
 
 	width, height := display.GetTextDisplaySize()
 
-	if width != 2 {
+	if width != 1 {
 		t.Fail()
 	}
 
-	if height != 6 {
+	if height != 4 {
 		t.Fail()
 	}
 }
