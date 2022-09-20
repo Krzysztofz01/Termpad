@@ -272,12 +272,16 @@ func (editor *Editor) renderChanges() error {
 func (editor *Editor) redrawFull() error {
 	ytLength := editor.text.GetLineCount()
 	xcLength, ycLength := editor.display.GetFullDisplaySize()
+
 	xShift := editor.display.GetXOffsetShift()
 	yShift := editor.display.GetYOffsetShift()
-	xPadding := editor.display.GetXOffsetPadding()
-	yPadding := editor.display.GetYOffsetPadding()
 
-	for ycIndex := 0; ycIndex < ycLength-yPadding; ycIndex += 1 {
+	leftPadd := editor.display.GetXLeftOffsetPadding()
+	rightPadd := editor.display.GetXRightOffsetPadding()
+	topPadd := editor.display.GetYTopOffsetPadding()
+	bottomPadd := editor.display.GetYBottomOffsetPadding()
+
+	for ycIndex := topPadd; ycIndex < ycLength-bottomPadd; ycIndex += 1 {
 		ytIndex := ycIndex + yShift
 
 		if ytIndex < ytLength {
@@ -286,7 +290,7 @@ func (editor *Editor) redrawFull() error {
 				return err
 			}
 
-			for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
+			for xcIndex := leftPadd; xcIndex < xcLength-rightPadd; xcIndex += 1 {
 				xtIndex := xcIndex + xShift
 
 				var char rune = ' '
@@ -306,7 +310,7 @@ func (editor *Editor) redrawFull() error {
 			continue
 		}
 
-		for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
+		for xcIndex := leftPadd; xcIndex < xcLength-rightPadd; xcIndex += 1 {
 			if err := editor.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
 				return err
 			}
@@ -331,11 +335,13 @@ func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
 	}
 
 	cWidth, _ := editor.display.GetFullDisplaySize()
-	xPadding := editor.display.GetXOffsetPadding()
+
+	leftPadd := editor.display.GetXLeftOffsetPadding()
+	rightPadd := editor.display.GetXRightOffsetPadding()
 
 	xShfit := editor.display.GetXOffsetShift()
 
-	for xcIndex := 0; xcIndex < cWidth-xPadding; xcIndex += 1 {
+	for xcIndex := leftPadd; xcIndex < cWidth-rightPadd; xcIndex += 1 {
 		xtIndex := xcIndex + xShfit
 
 		var char rune = ' '
@@ -363,12 +369,15 @@ func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
 
 	ytLength := editor.text.GetLineCount()
 	xcLength, ycLength := editor.display.GetFullDisplaySize()
+
 	xShift := editor.display.GetXOffsetShift()
 	yShift := editor.display.GetYOffsetShift()
-	xPadding := editor.display.GetXOffsetPadding()
-	yPadding := editor.display.GetYOffsetPadding()
 
-	for ycIndex := editor.cursor.GetOffsetY() - yShift; ycIndex < ycLength-yPadding; ycIndex += 1 {
+	leftPadd := editor.display.GetXLeftOffsetPadding()
+	rightPadd := editor.display.GetXRightOffsetPadding()
+	bottomPadd := editor.display.GetYBottomOffsetPadding()
+
+	for ycIndex := editor.cursor.GetOffsetY() - yShift; ycIndex < ycLength-bottomPadd; ycIndex += 1 {
 		ytIndex := ycIndex + yShift
 
 		if ytIndex < ytLength {
@@ -377,7 +386,7 @@ func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
 				return err
 			}
 
-			for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
+			for xcIndex := leftPadd; xcIndex < xcLength-rightPadd; xcIndex += 1 {
 				xtIndex := xcIndex + xShift
 
 				var char rune = ' '
@@ -397,7 +406,7 @@ func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
 			continue
 		}
 
-		for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
+		for xcIndex := leftPadd; xcIndex < xcLength-rightPadd; xcIndex += 1 {
 			if err := editor.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
 				return err
 			}
