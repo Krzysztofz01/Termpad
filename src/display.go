@@ -322,8 +322,8 @@ func (display *Display) RedrawTextBelow(text *Text, fullRedrawFallback bool) err
 	xrPadding := display.padding.GetRightPadding()
 	ybPadding := display.padding.GetBottomPadding()
 
-	for ycIndex := display.cursor.GetOffsetY() - display.xCalculatedBoundary; ycIndex < display.height-ybPadding; ycIndex += 1 {
-		ytIndex := ycIndex + display.xCalculatedBoundary
+	for ycIndex := display.cursor.GetOffsetY() - display.yCalculatedBoundary; ycIndex < display.height-ybPadding; ycIndex += 1 {
+		ytIndex := ycIndex + display.yCalculatedBoundary
 
 		if ytIndex < ytLength {
 			xtLength, err := text.GetLineLengthByOffset(ytIndex)
