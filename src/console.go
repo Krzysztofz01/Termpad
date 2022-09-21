@@ -1,11 +1,12 @@
 package main
 
-// TODO: Add color related preferences
-
 // Contract abstraction for the underlying console API
 type Console interface {
 	// Set a given character at given console position
 	InsertCharacter(xIndex int, yIndex int, char rune) error
+
+	// Set a given character at given console position with sepecified style attributes
+	InsertCharacterWithStyle(xIndex int, yIndex int, char rune, characterStyle CharacterStyle) error
 
 	// Remove a given character at given console position
 	RemoveCharacter(xIndex int, yIndex int) error
@@ -49,6 +50,17 @@ type ConsoleEventKeyPress struct {
 type ConsoleEventResize struct {
 	Width  int
 	Height int
+}
+
+// Structure representing the style for a given character to print on the console
+// TODO: Add support for console-sepcific colors
+type CharacterStyle struct {
+	Bold          bool
+	Italic        bool
+	StrikeThrough bool
+	Underline     bool
+	Foreground    string
+	Background    string
 }
 
 // Type representing the console cursor style, that can be provided by the console API implementation

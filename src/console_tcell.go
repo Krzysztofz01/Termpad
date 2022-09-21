@@ -49,6 +49,33 @@ func (console *ConsoleTcell) InsertCharacter(xIndex int, yIndex int, char rune) 
 	return nil
 }
 
+func (console *ConsoleTcell) InsertCharacterWithStyle(xIndex int, yIndex int, char rune, characterStyle CharacterStyle) error {
+	if xIndex < 0 {
+		return errors.New("console: invalid x (horizontal) out of bound index requested to insert")
+	}
+
+	if yIndex < 0 {
+		return errors.New("console: invalid y (vertical) out of bound index requested to insert")
+	}
+
+	style := tcell.StyleDefault.
+		Bold(characterStyle.Bold).
+		Italic(characterStyle.Italic).
+		StrikeThrough(characterStyle.StrikeThrough).
+		Underline(characterStyle.Underline)
+
+	if len(characterStyle.Foreground) > 0 {
+		style = style.Foreground(tcell.GetColor(characterStyle.Foreground))
+	}
+
+	if len(characterStyle.Background) > 0 {
+		style = style.Background(tcell.GetColor(characterStyle.Background))
+	}
+
+	console.screen.SetContent(xIndex, yIndex, char, nil, style)
+	return nil
+}
+
 func (console *ConsoleTcell) RemoveCharacter(xIndex int, yIndex int) error {
 	if xIndex < 0 {
 		return errors.New("console: invalid x (horizontal) out of bound index requested to remove")

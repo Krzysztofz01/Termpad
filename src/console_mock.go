@@ -18,6 +18,10 @@ func (console *ConsoleMock) InsertCharacter(xIndex int, yIndex int, char rune) e
 	return nil
 }
 
+func (console *ConsoleMock) InsertCharacterWithStyle(xIndex int, yIndex int, char rune, characterStyle CharacterStyle) error {
+	return nil
+}
+
 func (console *ConsoleMock) RemoveCharacter(xIndex int, yIndex int) error {
 	return nil
 }
