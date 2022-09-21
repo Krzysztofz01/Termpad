@@ -11,10 +11,10 @@ import (
 
 // A structure representing the text, which is a container for the List structures
 type Text struct {
-	lines    []*Line
-	modified bool
-
-	config *TextConfig
+	lines             []*Line
+	modified          bool
+	endOfLineSequence string
+	config            *TextConfig
 }
 
 // Text structure initialization funcation
@@ -24,6 +24,12 @@ func (text *Text) Init(textString string, newFile bool, textConfig *TextConfig) 
 		text.config = &defaultConfig
 	} else {
 		text.config = textConfig
+	}
+
+	if strings.Contains(textString, "\r\n") {
+		text.endOfLineSequence = "CRLF"
+	} else {
+		text.endOfLineSequence = "LF"
 	}
 
 	// NOTE: Removing the 0x0D CR (Carriage Return)
@@ -94,6 +100,8 @@ func (text *Text) InsertCharacter(char rune, cursor *Cursor) error {
 		return errors.New("text: invalid y (vertical) out of bound offset requested to insert")
 	}
 
+	text.modified = true
+
 	targetLine := text.lines[yOffset]
 	return targetLine.InsertBufferCharacter(char, cursor)
 }
@@ -109,6 +117,8 @@ func (text *Text) RemoveCharacterHead(cursor *Cursor) error {
 	if yOffset > len(text.lines) {
 		return errors.New("text: invalid y (vertical) out of bound offset requested to remove")
 	}
+
+	text.modified = true
 
 	targetLine := text.lines[yOffset]
 	return targetLine.RemoveBufferCharacterHead(cursor)
@@ -126,6 +136,8 @@ func (text *Text) RemoveCharacterTail(cursor *Cursor) error {
 		return errors.New("text: invalid y (vertical) out of bound offset requested to remove")
 	}
 
+	text.modified = true
+
 	targetLine := text.lines[yOffset]
 	return targetLine.RemoveBufferCharacterTail(cursor)
 }
@@ -142,6 +154,8 @@ func (text *Text) InsertLine(cursor *Cursor) error {
 	if yOffset > len(text.lines) {
 		return errors.New("text: invalid y (vertical) out of bound offset requested to split")
 	}
+
+	text.modified = true
 
 	targetLine := text.lines[yOffset]
 
@@ -214,6 +228,8 @@ func (text *Text) CombineLine(cursor *Cursor, lineStepDown bool) error {
 	if yOffset > len(text.lines) {
 		return errors.New("text: invalid y (vertical) out of bound offset requested to combine")
 	}
+
+	text.modified = true
 
 	currentLineBuffer := text.lines[yOffset].GetBufferAsSlice()
 	targetLineBuffer := text.lines[yOffset-1].GetBufferAsSlice()
@@ -328,6 +344,22 @@ func (text *Text) GetTextAsString() (*string, error) {
 
 	builderText := builder.String()
 	return &builderText, nil
+}
+
+// Return a bool value indicating if the current text differs from the persistent text
+func (text *Text) IsModified() bool {
+	return text.modified
+}
+
+// Reset the modification state to indicate that the current and persistent text are the same
+func (text *Text) ResetModificationState() error {
+	text.modified = false
+	return nil
+}
+
+// Return the end-of-line sequence name (CRLF/LF)
+func (text *Text) GetEndOfLineSequenceName() string {
+	return text.endOfLineSequence
 }
 
 // A structure containing the configuration for the text structure

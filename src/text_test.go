@@ -444,6 +444,66 @@ func TestTextShouldConvertBackToString(t *testing.T) {
 	}
 }
 
+func TestTextShouldCorrecltyIndicateTheModificationState(t *testing.T) {
+	textContent := "First line\nSecond line\nThird line"
+
+	text := new(Text)
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
+		t.Fail()
+	}
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 0, CreateConsoleMockup(), nil); err != nil {
+		t.Fail()
+	}
+
+	if text.IsModified() {
+		t.Fail()
+	}
+
+	if err := text.RemoveCharacterTail(cursor); err != nil {
+		t.Fail()
+	}
+
+	if !text.IsModified() {
+		t.Fail()
+	}
+
+	if err := text.ResetModificationState(); err != nil {
+		t.Fail()
+	}
+
+	if text.IsModified() {
+		t.Fail()
+	}
+}
+
+func TestTextShouldReturnCorrectEolForLFText(t *testing.T) {
+	textContent := "First line\nSecond line\nThird line"
+
+	text := new(Text)
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
+		t.Fail()
+	}
+
+	if text.GetEndOfLineSequenceName() != "LF" {
+		t.Fail()
+	}
+}
+
+func TestTextShouldReturnCorrectEolForCRLFText(t *testing.T) {
+	textContent := "First line\r\nSecond line\r\nThird line"
+
+	text := new(Text)
+	if err := text.Init(textContent, false, GetTextTestTextConfigMockup()); err != nil {
+		t.Fail()
+	}
+
+	if text.GetEndOfLineSequenceName() != "CRLF" {
+		t.Fail()
+	}
+}
+
 func GetTextTestTextConfigMockup() *TextConfig {
 	return &TextConfig{
 		UsePlatformSpecificEndOfLineSequence: false,
