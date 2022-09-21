@@ -4,6 +4,8 @@ import "errors"
 
 // TODO: The paddingFalback is indicating if the padding is greater than the size. The logical to handle such
 // situation can be implemented later (during widgets implementation)
+// TODO: Add unit-test for redrawing and size change logic. This task will require to implement a more precies
+// behavior to the mock console and will require mock text structures
 
 // Structure representing the console display. It contains the calculated and fixed horizontal and vertical boundaries
 type Display struct {

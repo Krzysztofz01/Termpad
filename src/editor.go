@@ -76,6 +76,11 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 		return err
 	}
 
+	editor.keybinds = new(Keybinds)
+	if err := editor.keybinds.Init(&editor.config.KeybindsConfiguration); err != nil {
+		return err
+	}
+
 	editorPadding := new(Padding)
 	if err := editorPadding.Init(0, 0, 0, 0); err != nil {
 		return err
@@ -86,16 +91,11 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 		return err
 	}
 
-	editor.keybinds = new(Keybinds)
-	if err := editor.keybinds.Init(&editor.config.KeybindsConfiguration); err != nil {
+	if err := editor.display.RedrawTextFull(editor.text); err != nil {
 		return err
 	}
 
-	if err := editor.redrawFull(); err != nil {
-		return err
-	}
-
-	if err := editor.renderChanges(); err != nil {
+	if err := editor.display.RenderChanges(); err != nil {
 		return err
 	}
 
@@ -197,12 +197,12 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 			return false, err
 		}
 
-		if err := editor.redrawFull(); err != nil {
+		if err := editor.display.RedrawTextFull(editor.text); err != nil {
 			return false, err
 		}
 	}
 
-	return breakEditorLoop, editor.renderChanges()
+	return breakEditorLoop, editor.display.RenderChanges()
 }
 
 // Handling function for the ConsoleEventResize console event. The funcation returns a bool value indicating if the editor loop should be broken
@@ -215,11 +215,11 @@ func (editor *Editor) handleConsoleEventResize(event ConsoleEventResize) (bool, 
 		return false, err
 	}
 
-	if err := editor.redrawFull(); err != nil {
+	if err := editor.display.RedrawTextFull(editor.text); err != nil {
 		return false, err
 	}
 
-	return false, editor.renderChanges()
+	return false, editor.display.RenderChanges()
 }
 
 // Generate string from text structure and create or truncate target file
@@ -250,169 +250,6 @@ func (editor *Editor) SaveChanges() error {
 
 	if !editor.fileExists {
 		editor.fileExists = true
-	}
-
-	return nil
-}
-
-// Request a render of all changes to the screen of the underlying console API
-func (editor *Editor) renderChanges() error {
-	// NOTE: It does not ,, feel good'' to invoke this func in the render func, but on the other hand,
-	// the cursor position correct is console API related, just like commiting the content changes.
-	xShift := editor.display.GetXOffsetShift()
-	yShift := editor.display.GetYOffsetShift()
-	if err := editor.cursor.CorrectUnderlyingConsolePositionDifference(xShift, yShift); err != nil {
-		return err
-	}
-
-	return editor.console.Commit()
-}
-
-// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines are affected
-// TODO: The tHeight can be greater than dHeight - we can avoid redundand off-display rendering. We can implement this by adding range
-// based functions in the display struct
-func (editor *Editor) redrawFull() error {
-	ytLength := editor.text.GetLineCount()
-	xcLength, ycLength := editor.display.GetFullDisplaySize()
-
-	xShift := editor.display.GetXOffsetShift()
-	yShift := editor.display.GetYOffsetShift()
-
-	leftPadd := editor.display.GetXLeftOffsetPadding()
-	rightPadd := editor.display.GetXRightOffsetPadding()
-	topPadd := editor.display.GetYTopOffsetPadding()
-	bottomPadd := editor.display.GetYBottomOffsetPadding()
-
-	for ycIndex := topPadd; ycIndex < ycLength-bottomPadd; ycIndex += 1 {
-		ytIndex := ycIndex + yShift
-
-		if ytIndex < ytLength {
-			xtLength, err := editor.text.GetLineLengthByOffset(ytIndex)
-			if err != nil {
-				return err
-			}
-
-			for xcIndex := leftPadd; xcIndex < xcLength-rightPadd; xcIndex += 1 {
-				xtIndex := xcIndex + xShift
-
-				var char rune = ' '
-
-				if xtIndex < xtLength {
-					char, err = editor.text.GetCharacterByOffsets(xtIndex, ytIndex)
-					if err != nil {
-						return err
-					}
-				}
-
-				if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
-					return err
-				}
-			}
-
-			continue
-		}
-
-		for xcIndex := leftPadd; xcIndex < xcLength-rightPadd; xcIndex += 1 {
-			if err := editor.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. Only the line specified by the cursor is affected.
-func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
-	if !editor.display.CursorInBoundries() && fullRedrawFallback {
-		return editor.redrawFull()
-	}
-
-	ytOffset := editor.cursor.GetOffsetY()
-	ycOffset := ytOffset - editor.display.GetYOffsetShift()
-
-	tWidth, err := editor.text.GetLineLengthByOffset(ytOffset)
-	if err != nil {
-		return err
-	}
-
-	cWidth, _ := editor.display.GetFullDisplaySize()
-
-	leftPadd := editor.display.GetXLeftOffsetPadding()
-	rightPadd := editor.display.GetXRightOffsetPadding()
-
-	xShfit := editor.display.GetXOffsetShift()
-
-	for xcIndex := leftPadd; xcIndex < cWidth-rightPadd; xcIndex += 1 {
-		xtIndex := xcIndex + xShfit
-
-		var char rune = ' '
-		if xtIndex < tWidth {
-			char, err = editor.text.GetCharacterByOffsets(xtIndex, ytOffset)
-			if err != nil {
-				return err
-			}
-		}
-
-		if err := editor.console.InsertCharacter(xcIndex, ycOffset, char); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines (including the current) below the cursor are affected.
-// TODO: The ycIndex < ytLength condition prevents the overwrting of previous screen data (Edit: ycIndex patched to ytIndex, does this problem still exist?)
-func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
-	if !editor.display.CursorInBoundries() && fullRedrawFallback {
-		return editor.redrawFull()
-	}
-
-	ytLength := editor.text.GetLineCount()
-	xcLength, ycLength := editor.display.GetFullDisplaySize()
-
-	xShift := editor.display.GetXOffsetShift()
-	yShift := editor.display.GetYOffsetShift()
-
-	leftPadd := editor.display.GetXLeftOffsetPadding()
-	rightPadd := editor.display.GetXRightOffsetPadding()
-	bottomPadd := editor.display.GetYBottomOffsetPadding()
-
-	for ycIndex := editor.cursor.GetOffsetY() - yShift; ycIndex < ycLength-bottomPadd; ycIndex += 1 {
-		ytIndex := ycIndex + yShift
-
-		if ytIndex < ytLength {
-			xtLength, err := editor.text.GetLineLengthByOffset(ytIndex)
-			if err != nil {
-				return err
-			}
-
-			for xcIndex := leftPadd; xcIndex < xcLength-rightPadd; xcIndex += 1 {
-				xtIndex := xcIndex + xShift
-
-				var char rune = ' '
-
-				if xtIndex < xtLength {
-					char, err = editor.text.GetCharacterByOffsets(xtIndex, ytIndex)
-					if err != nil {
-						return err
-					}
-				}
-
-				if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
-					return err
-				}
-			}
-
-			continue
-		}
-
-		for xcIndex := leftPadd; xcIndex < xcLength-rightPadd; xcIndex += 1 {
-			if err := editor.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil
@@ -551,7 +388,7 @@ func (editor *Editor) handleKeyEnter() error {
 		return err
 	}
 
-	if err := editor.redrawBelow(true); err != nil {
+	if err := editor.display.RedrawTextBelow(editor.text, true); err != nil {
 		return err
 	}
 
@@ -588,7 +425,7 @@ func (editor *Editor) handleKeyBackspace() error {
 		// And a func with such capabilities would still redraw the content below. It can only optimize
 		// endge cases when we are editing the last line in current display range. Too much hustle for
 		// such negligible performance improvement.
-		if err := editor.redrawFull(); err != nil {
+		if err := editor.display.RedrawTextFull(editor.text); err != nil {
 			return err
 		}
 
@@ -604,7 +441,7 @@ func (editor *Editor) handleKeyBackspace() error {
 		return err
 	}
 
-	if err := editor.redrawLine(true); err != nil {
+	if err := editor.display.RedrawTextLine(editor.text, true); err != nil {
 		return err
 	}
 
@@ -636,7 +473,7 @@ func (editor *Editor) handleKeyDelete() error {
 			return err
 		}
 
-		if err := editor.redrawBelow(true); err != nil {
+		if err := editor.display.RedrawTextBelow(editor.text, true); err != nil {
 			return err
 		}
 
@@ -648,7 +485,7 @@ func (editor *Editor) handleKeyDelete() error {
 		return err
 	}
 
-	if err := editor.redrawLine(true); err != nil {
+	if err := editor.display.RedrawTextLine(editor.text, true); err != nil {
 		return err
 	}
 
@@ -661,7 +498,7 @@ func (editor *Editor) handleKeyPrintableCharacter(char rune) error {
 		return err
 	}
 
-	if err := editor.redrawLine(true); err != nil {
+	if err := editor.display.RedrawTextLine(editor.text, true); err != nil {
 		return err
 	}
 
