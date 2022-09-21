@@ -3,14 +3,15 @@ package main
 import (
 	"errors"
 	"os"
+	"path/filepath"
 )
 
 // TODO: Move key handler to helper struct
-// TODO: Update redraw after display left/bottom padding feature is added
 
 // Structure representing the editor instance which is a warapper for text I/O
 type Editor struct {
 	filePath   string
+	fileName   string
 	fileExists bool
 	console    Console
 	display    *Display
@@ -28,6 +29,7 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 	}
 
 	editor.filePath = filePath
+	editor.fileName = filepath.Base(editor.filePath)
 
 	if _, err := os.Stat(editor.filePath); err == nil {
 		editor.fileExists = true
