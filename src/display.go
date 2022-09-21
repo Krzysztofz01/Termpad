@@ -208,3 +208,153 @@ func (display *Display) CursorInBoundries() bool {
 
 	return true
 }
+
+// Request a render of all changes to the screen of the underlying console API
+func (display *Display) RenderChanges() error {
+	xDiff := display.xCalculatedBoundary
+	yDiff := display.yCalculatedBoundary
+
+	if err := display.cursor.CorrectUnderlyingConsolePositionDifference(xDiff, yDiff); err != nil {
+		return err
+	}
+
+	return display.console.Commit()
+}
+
+// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines are affected
+// TODO: The tHeight can be greater than dHeight - we can avoid redundand off-display rendering. We can implement this by adding range
+// based functions in the display struct
+func (display *Display) RedrawTextFull(text *Text) error {
+	yTextLength := text.GetLineCount()
+
+	xlPadding := display.padding.GetLeftPadding()
+	xrPadding := display.padding.GetRightPadding()
+	ytPadding := display.padding.GetTopPadding()
+	ybPadding := display.padding.GetBottomPadding()
+
+	for ycIndex := ytPadding; ycIndex < display.height-ybPadding; ycIndex += 1 {
+		ytIndex := ycIndex + display.yCalculatedBoundary
+
+		if ytIndex < yTextLength {
+			xtLength, err := text.GetLineLengthByOffset(ytIndex)
+			if err != nil {
+				return err
+			}
+
+			for xcIndex := xlPadding; xcIndex < display.width-xrPadding; xcIndex += 1 {
+				xtIndex := xcIndex + display.xCalculatedBoundary
+
+				var char rune = ' '
+
+				if xtIndex < xtLength {
+					char, err = text.GetCharacterByOffsets(xtIndex, ytIndex)
+					if err != nil {
+						return err
+					}
+				}
+
+				if err := display.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
+					return err
+				}
+			}
+
+			continue
+		}
+
+		for xcIndex := xlPadding; xcIndex < display.width-xrPadding; xcIndex += 1 {
+			if err := display.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. Only the line specified by the cursor is affected.
+func (display *Display) RedrawTextLine(text *Text, fullRedrawFallback bool) error {
+	if !display.CursorInBoundries() && fullRedrawFallback {
+		return display.RedrawTextFull(text)
+	}
+
+	ytOffset := display.cursor.GetOffsetY()
+	ycOffset := ytOffset - display.yCalculatedBoundary
+
+	tWidth, err := text.GetLineLengthByOffset(ytOffset)
+	if err != nil {
+		return err
+	}
+
+	xlPadding := display.padding.GetLeftPadding()
+	xrPadding := display.padding.GetRightPadding()
+
+	for xcIndex := xlPadding; xcIndex < display.width-xrPadding; xcIndex += 1 {
+		xtIndex := xcIndex + display.xCalculatedBoundary
+
+		var char rune = ' '
+		if xtIndex < tWidth {
+			char, err = text.GetCharacterByOffsets(xtIndex, ytOffset)
+			if err != nil {
+				return err
+			}
+		}
+
+		if err := display.console.InsertCharacter(xcIndex, ycOffset, char); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines (including the current) below the cursor are affected.
+// TODO: The ycIndex < ytLength condition prevents the overwrting of previous screen data (Edit: ycIndex patched to ytIndex, does this problem still exist?)
+func (display *Display) RedrawTextBelow(text *Text, fullRedrawFallback bool) error {
+	if !display.CursorInBoundries() && fullRedrawFallback {
+		return display.RedrawTextFull(text)
+	}
+
+	ytLength := text.GetLineCount()
+
+	xlPadding := display.padding.GetLeftPadding()
+	xrPadding := display.padding.GetRightPadding()
+	ybPadding := display.padding.GetBottomPadding()
+
+	for ycIndex := display.cursor.GetOffsetY() - display.xCalculatedBoundary; ycIndex < display.height-ybPadding; ycIndex += 1 {
+		ytIndex := ycIndex + display.xCalculatedBoundary
+
+		if ytIndex < ytLength {
+			xtLength, err := text.GetLineLengthByOffset(ytIndex)
+			if err != nil {
+				return err
+			}
+
+			for xcIndex := xlPadding; xcIndex < display.width-xrPadding; xcIndex += 1 {
+				xtIndex := xcIndex + display.xCalculatedBoundary
+
+				var char rune = ' '
+
+				if xtIndex < xtLength {
+					char, err = text.GetCharacterByOffsets(xtIndex, ytIndex)
+					if err != nil {
+						return err
+					}
+				}
+
+				if err := display.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
+					return err
+				}
+			}
+
+			continue
+		}
+
+		for xcIndex := xlPadding; xcIndex < display.width-xrPadding; xcIndex += 1 {
+			if err := display.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
