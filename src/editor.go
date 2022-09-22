@@ -2,11 +2,13 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 )
 
 // TODO: Move key handler to helper struct
+// TODO: Implement ,,alternate screen” in order to restore previous console content after program exit
 
 // Structure representing the editor instance which is a warapper for text I/O
 type Editor struct {
@@ -301,6 +303,84 @@ func (editor *Editor) menuUpdateInformation() error {
 	}
 
 	return nil
+}
+
+// Helper function creates a ,,confirmation prompt”. The message is displayed as the menu notification and the
+// program input is intercepted. The function will return true on confirm [T] or false on cancle [N]. The function
+// is also intercepting the resize event to make sure the UI beahaviour stays correct.
+func (editor *Editor) menuPrompt(notification string) (bool, error) {
+	message := fmt.Sprintf("%s [Y] [N]", notification)
+
+	width, _ := editor.display.GetFullDisplaySize()
+	if len(message) > width {
+		message = "[Y/N]"
+	}
+
+	if err := editor.menu.SetNotificationText(message); err != nil {
+		return false, err
+	}
+
+	if err := editor.display.RedrawMenu(editor.menu); err != nil {
+		return false, err
+	}
+
+	if err := editor.display.RenderChanges(); err != nil {
+		return false, err
+	}
+
+	resultValue := false
+	resultReady := false
+
+	for {
+		ev := editor.console.WatchConsoleEvent()
+		switch event := ev.(type) {
+
+		case ConsoleEventKeyPress:
+			{
+				if event.Char == 't' || event.Char == 'T' {
+					resultValue = true
+					resultReady = true
+				}
+
+				if event.Char == 'n' || event.Char == 'N' {
+					resultValue = false
+					resultReady = true
+				}
+
+				if event.Modifier == ModifierCtrl && event.Char == 'c' {
+					resultValue = false
+					resultReady = true
+				}
+
+				if resultReady {
+					if err := editor.menu.SetNotificationText(""); err != nil {
+						return false, err
+					}
+
+					if err := editor.display.RedrawMenu(editor.menu); err != nil {
+						return false, err
+					}
+
+					if err := editor.display.RenderChanges(); err != nil {
+						return false, err
+					}
+
+					return resultValue, nil
+				}
+
+			}
+
+		// NOTE: The inner editor loop is also handling the resize event to avoid UI glitches
+		// on resizing during an active prompt.
+		case ConsoleEventResize:
+			{
+				editorBreak, err := editor.handleConsoleEventResize(event)
+				if err != nil || editorBreak {
+					return false, err
+				}
+			}
+		}
+	}
 }
 
 // NOTE: This section contains all the key-specific handler functions
@@ -660,8 +740,23 @@ func (editor *Editor) handleKeybindSave() error {
 
 // [Ctrl] + [ASCII 0x20 - 0x7E (defined by configuration)] Handle program exit keybind. The funcation
 // is returning a bool value that idicates if the program loop should be broken.
-// TODO: Exit confirmation on un-saved changes
-// TODO: Implement ,,alternate screen” in order to restore previous console content after program exit
 func (editor *Editor) handleKeybindExit() (bool, error) {
+	if !editor.text.IsModified() {
+		return true, nil
+	}
+
+	result, err := editor.menuPrompt("Save pending changes?")
+	if err != nil {
+		return false, err
+	}
+
+	if !result {
+		return false, nil
+	}
+
+	if err := editor.SaveChanges(); err != nil {
+		return false, err
+	}
+
 	return true, nil
 }
