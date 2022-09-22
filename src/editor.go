@@ -20,6 +20,7 @@ type Editor struct {
 	history    *History
 	config     *Config
 	keybinds   *Keybinds
+	menu       *Menu
 }
 
 // Editor structure initialization funcation
@@ -81,8 +82,17 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 		return err
 	}
 
+	editor.menu = new(Menu)
+	if err := editor.menu.Init(editor.fileName, editor.text.GetEndOfLineSequenceName()); err != nil {
+		return err
+	}
+
+	if err := editor.menuUpdateInformation(); err != nil {
+		return err
+	}
+
 	editorPadding := new(Padding)
-	if err := editorPadding.Init(0, 0, 0, 0); err != nil {
+	if err := editorPadding.Init(0, MenuHeight, 0, 0); err != nil {
 		return err
 	}
 
@@ -92,6 +102,10 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 	}
 
 	if err := editor.display.RedrawTextFull(editor.text); err != nil {
+		return err
+	}
+
+	if err := editor.display.RedrawMenu(editor.menu); err != nil {
 		return err
 	}
 
@@ -131,6 +145,11 @@ func (editor *Editor) Start() error {
 func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bool, error) {
 	var breakEditorLoop bool = false
 	var err error = nil
+
+	// NOTE: Reseting the content of the menu notification
+	if err := editor.menu.SetNotificationText(""); err != nil {
+		return false, err
+	}
 
 	// NOTE: The [Ctrl] key modifier was applied
 	if event.Modifier == ModifierCtrl {
@@ -202,6 +221,14 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 		}
 	}
 
+	if err := editor.menuUpdateInformation(); err != nil {
+		return false, err
+	}
+
+	if err := editor.display.RedrawMenu(editor.menu); err != nil {
+		return false, err
+	}
+
 	return breakEditorLoop, editor.display.RenderChanges()
 }
 
@@ -216,6 +243,14 @@ func (editor *Editor) handleConsoleEventResize(event ConsoleEventResize) (bool, 
 	}
 
 	if err := editor.display.RedrawTextFull(editor.text); err != nil {
+		return false, err
+	}
+
+	if err := editor.menuUpdateInformation(); err != nil {
+		return false, err
+	}
+
+	if err := editor.display.RedrawMenu(editor.menu); err != nil {
 		return false, err
 	}
 
@@ -250,6 +285,19 @@ func (editor *Editor) SaveChanges() error {
 
 	if !editor.fileExists {
 		editor.fileExists = true
+	}
+
+	return nil
+}
+
+// Helper function used to update the cursor position and file modification informations displayed on the menu widget
+func (editor *Editor) menuUpdateInformation() error {
+	if err := editor.menu.SetCursorPositionText(*editor.cursor); err != nil {
+		return err
+	}
+
+	if err := editor.menu.SetFileModificationState(editor.text.IsModified()); err != nil {
+		return err
 	}
 
 	return nil
@@ -594,9 +642,20 @@ func (editor *Editor) handleKeysCtrlArrowRight() error {
 }
 
 // [Ctrl] + [ASCII 0x20 - 0x7E (defined by configuration)] Handle file save keybind
-// TODO: Notification after widget implementation
 func (editor *Editor) handleKeybindSave() error {
-	return editor.SaveChanges()
+	if err := editor.SaveChanges(); err != nil {
+		return err
+	}
+
+	if err := editor.menu.SetNotificationText("Changes saved successful."); err != nil {
+		return err
+	}
+
+	if err := editor.text.ResetModificationState(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // [Ctrl] + [ASCII 0x20 - 0x7E (defined by configuration)] Handle program exit keybind. The funcation
