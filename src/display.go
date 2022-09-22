@@ -360,3 +360,32 @@ func (display *Display) RedrawTextBelow(text *Text, fullRedrawFallback bool) err
 
 	return nil
 }
+
+func (display *Display) RedrawMenu(menu *Menu) error {
+	mBuffer, err := menu.GenerateOutputBuffer(display.width)
+	if err != nil {
+		return err
+	}
+
+	if display.padding.GetBottomPadding() != MenuHeight {
+		return errors.New("display: The current boundaries are preventing the menu redrawing")
+	}
+
+	style := CharacterStyle{
+		Background:    "white",
+		Foreground:    "black",
+		Bold:          true,
+		Italic:        false,
+		Underline:     false,
+		StrikeThrough: false,
+	}
+
+	yIndex := display.height - MenuHeight
+	for xIndex := 0; xIndex < display.width; xIndex += 1 {
+		if err := display.console.InsertCharacterWithStyle(xIndex, yIndex, mBuffer[xIndex], style); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
