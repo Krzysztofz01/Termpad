@@ -2,18 +2,18 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
-	"runtime"
+	"path/filepath"
 )
 
-// TODO: Verify if the cursor can be out of display now, when it is wrapping the console API
 // TODO: Move key handler to helper struct
-// TODO: Better wrapper approach for keeping sync during operation on both internal and console API components
-// TODO: Add support for cursor style preferences
+// TODO: Implement ,,alternate screen” in order to restore previous console content after program exit
 
 // Structure representing the editor instance which is a warapper for text I/O
 type Editor struct {
 	filePath   string
+	fileName   string
 	fileExists bool
 	console    Console
 	display    *Display
@@ -22,6 +22,7 @@ type Editor struct {
 	history    *History
 	config     *Config
 	keybinds   *Keybinds
+	menu       *Menu
 }
 
 // Editor structure initialization funcation
@@ -31,6 +32,7 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 	}
 
 	editor.filePath = filePath
+	editor.fileName = filepath.Base(editor.filePath)
 
 	if _, err := os.Stat(editor.filePath); err == nil {
 		editor.fileExists = true
@@ -56,23 +58,43 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 
 	editor.console = console
 
+	if config == nil {
+		return errors.New("editor: invalid config reference")
+	}
+
+	editor.config = config
+
 	editor.text = new(Text)
-	if err := editor.text.Init(fileTextContent, !editor.fileExists); err != nil {
+	if err := editor.text.Init(fileTextContent, !editor.fileExists, &editor.config.TextConfiguration); err != nil {
 		return err
 	}
 
 	editor.cursor = new(Cursor)
-	if err := editor.cursor.Init(0, 0, console); err != nil {
+	if err := editor.cursor.Init(0, 0, console, &editor.config.CursorConfiguration); err != nil {
 		return err
 	}
 
 	editor.history = new(History)
-	if err := editor.history.Init(); err != nil {
+	if err := editor.history.Init(&editor.config.HistoryConfiguration); err != nil {
+		return err
+	}
+
+	editor.keybinds = new(Keybinds)
+	if err := editor.keybinds.Init(&editor.config.KeybindsConfiguration); err != nil {
+		return err
+	}
+
+	editor.menu = new(Menu)
+	if err := editor.menu.Init(editor.fileName, editor.text.GetEndOfLineSequenceName()); err != nil {
+		return err
+	}
+
+	if err := editor.menuUpdateInformation(); err != nil {
 		return err
 	}
 
 	editorPadding := new(Padding)
-	if err := editorPadding.Init(0, 0, 0, 0); err != nil {
+	if err := editorPadding.Init(0, MenuHeight, 0, 0); err != nil {
 		return err
 	}
 
@@ -81,22 +103,15 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 		return err
 	}
 
-	if config == nil {
-		return errors.New("editor: invalid config reference")
-	}
-
-	editor.config = config
-
-	editor.keybinds = new(Keybinds)
-	if err := editor.keybinds.Init(editor.config); err != nil {
+	if err := editor.display.RedrawTextFull(editor.text); err != nil {
 		return err
 	}
 
-	if err := editor.redrawFull(); err != nil {
+	if err := editor.display.RedrawMenu(editor.menu); err != nil {
 		return err
 	}
 
-	if err := editor.renderChanges(); err != nil {
+	if err := editor.display.RenderChanges(); err != nil {
 		return err
 	}
 
@@ -133,14 +148,33 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 	var breakEditorLoop bool = false
 	var err error = nil
 
+	// NOTE: Reseting the content of the menu notification
+	if err := editor.menu.SetNotificationText(""); err != nil {
+		return false, err
+	}
+
 	// NOTE: The [Ctrl] key modifier was applied
 	if event.Modifier == ModifierCtrl {
-		switch event.Char {
-		case editor.keybinds.GetSaveKeybind():
-			err = editor.handleKeybindSave()
-		default:
-			err = errors.New("editor: can not handle given input")
+		if event.Key == KeyPrintable {
+			switch event.Char {
+			case editor.keybinds.GetSaveKeybind():
+				err = editor.handleKeybindSave()
+			case editor.keybinds.GetExitKeybind():
+				breakEditorLoop, err = editor.handleKeybindExit()
+			default:
+				err = errors.New("editor: can not handle given input")
+			}
+		} else {
+			switch event.Key {
+			case KeyLeft:
+				err = editor.handleKeysCtrlArrowLeft()
+			case KeyRight:
+				err = editor.handleKeysCtrlArrowRight()
+			default:
+				err = errors.New("editor: can not handle given input")
+			}
 		}
+
 	}
 
 	// NOTE: The [Alt] key modifier was applied
@@ -179,34 +213,50 @@ func (editor *Editor) handleConsoleEventKeyPress(event ConsoleEventKeyPress) (bo
 		return false, err
 	}
 
-	return breakEditorLoop, editor.renderChanges()
+	if !editor.display.CursorInBoundries() {
+		if err := editor.display.RecalculateBoundaries(); err != nil {
+			return false, err
+		}
+
+		if err := editor.display.RedrawTextFull(editor.text); err != nil {
+			return false, err
+		}
+	}
+
+	if err := editor.menuUpdateInformation(); err != nil {
+		return false, err
+	}
+
+	if err := editor.display.RedrawMenu(editor.menu); err != nil {
+		return false, err
+	}
+
+	return breakEditorLoop, editor.display.RenderChanges()
 }
 
 // Handling function for the ConsoleEventResize console event. The funcation returns a bool value indicating if the editor loop should be broken
 func (editor *Editor) handleConsoleEventResize(event ConsoleEventResize) (bool, error) {
-	applyRedraw := false
-
-	if editor.display.HasSizeChanged() {
-		if err := editor.display.Resize(); err != nil {
-			return false, err
-		}
-
-		applyRedraw = true
-	}
-
-	if !editor.display.CursorInBoundries() {
-		applyRedraw = true
-	}
-
-	if !applyRedraw {
+	if !editor.display.HasSizeChanged(event.Width, event.Height) {
 		return false, nil
 	}
 
-	if err := editor.redrawFull(); err != nil {
+	if err := editor.display.Resize(event.Width, event.Height); err != nil {
 		return false, err
 	}
 
-	return false, editor.renderChanges()
+	if err := editor.display.RedrawTextFull(editor.text); err != nil {
+		return false, err
+	}
+
+	if err := editor.menuUpdateInformation(); err != nil {
+		return false, err
+	}
+
+	if err := editor.display.RedrawMenu(editor.menu); err != nil {
+		return false, err
+	}
+
+	return false, editor.display.RenderChanges()
 }
 
 // Generate string from text structure and create or truncate target file
@@ -216,14 +266,7 @@ func (editor *Editor) SaveChanges() error {
 		return err
 	}
 
-	useCarriageReturn := false
-	if editor.config.UsePlatformSpecificEndOfLineSequence {
-		if runtime.GOOS == "windows" {
-			useCarriageReturn = true
-		}
-	}
-
-	textContent, err := editor.text.GetTextAsString(useCarriageReturn)
+	textContent, err := editor.text.GetTextAsString()
 	if err != nil {
 		if fileErr := file.Close(); fileErr != nil {
 			return fileErr
@@ -249,159 +292,100 @@ func (editor *Editor) SaveChanges() error {
 	return nil
 }
 
-// Request a render of all changes to the screen of the underlying console API
-func (editor *Editor) renderChanges() error {
-	return editor.console.Commit()
-}
-
-// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines are affected
-// TODO: The tHeight can be greater than dHeight - we can avoid redundand off-display rendering. We can implement this by adding range
-// based functions in the display struct
-func (editor *Editor) redrawFull() error {
-	ytLength := editor.text.GetLineCount()
-	xcLength, ycLength := editor.display.GetFullDisplaySize()
-	xShift := editor.display.GetXOffsetShift()
-	yShift := editor.display.GetYOffsetShift()
-	xPadding := editor.display.GetXOffsetPadding()
-	yPadding := editor.display.GetYOffsetPadding()
-
-	for ycIndex := 0; ycIndex < ycLength-yPadding; ycIndex += 1 {
-		ytIndex := ycIndex + yShift
-
-		if ycIndex < ytLength {
-			xtLength, err := editor.text.GetLineLengthByOffset(ytIndex)
-			if err != nil {
-				return err
-			}
-
-			for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
-				xtIndex := xcIndex + xShift
-
-				var char rune = ' '
-
-				if xtIndex < xtLength {
-					char, err = editor.text.GetCharacterByOffsets(xtIndex, ytIndex)
-					if err != nil {
-						return err
-					}
-				}
-
-				if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
-					return err
-				}
-			}
-
-			continue
-		}
-
-		for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
-			if err := editor.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. Only the line specified by the cursor is affected.
-func (editor *Editor) redrawLine(fullRedrawFallback bool) error {
-	if !editor.display.CursorInBoundries() && fullRedrawFallback {
-		return editor.redrawFull()
-	}
-
-	ytOffset := editor.cursor.GetOffsetY()
-	ycOffset := ytOffset - editor.display.GetYOffsetShift()
-
-	tWidth, err := editor.text.GetLineLengthByOffset(ytOffset)
-	if err != nil {
+// Helper function used to update the cursor position and file modification informations displayed on the menu widget
+func (editor *Editor) menuUpdateInformation() error {
+	if err := editor.menu.SetCursorPositionText(*editor.cursor); err != nil {
 		return err
 	}
 
-	cWidth, _ := editor.display.GetFullDisplaySize()
-	xPadding := editor.display.GetXOffsetPadding()
-
-	xShfit := editor.display.GetXOffsetShift()
-
-	for xcIndex := 0; xcIndex < cWidth-xPadding; xcIndex += 1 {
-		xtIndex := xcIndex + xShfit
-
-		var char rune = ' '
-		if xtIndex < tWidth {
-			char, err = editor.text.GetCharacterByOffsets(xtIndex, ytOffset)
-			if err != nil {
-				return err
-			}
-		}
-
-		if err := editor.console.InsertCharacter(xcIndex, ycOffset, char); err != nil {
-			return err
-		}
+	if err := editor.menu.SetFileModificationState(editor.text.IsModified()); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-// Function is rewriting text changes to the underlying console API screen, according to the display boundaries. All lines (including the current) below the cursor are affected.
-// TODO: The ycIndex < ytLength condition prevents the overwrting of previous screen data
-func (editor *Editor) redrawBelow(fullRedrawFallback bool) error {
-	if !editor.display.CursorInBoundries() && fullRedrawFallback {
-		return editor.redrawFull()
+// Helper function creates a ,,confirmation prompt”. The message is displayed as the menu notification and the
+// program input is intercepted. The function will return true on confirm [T] or false on cancle [N]. The function
+// is also intercepting the resize event to make sure the UI beahaviour stays correct.
+func (editor *Editor) menuPrompt(notification string) (bool, error) {
+	message := fmt.Sprintf("%s [Y] [N]", notification)
+
+	width, _ := editor.display.GetFullDisplaySize()
+	if len(message) > width {
+		message = "[Y/N]"
 	}
 
-	ytLength := editor.text.GetLineCount()
-	xcLength, ycLength := editor.display.GetFullDisplaySize()
-	xShift := editor.display.GetXOffsetShift()
-	yShift := editor.display.GetYOffsetShift()
-	xPadding := editor.display.GetXOffsetPadding()
-	yPadding := editor.display.GetYOffsetPadding()
+	if err := editor.menu.SetNotificationText(message); err != nil {
+		return false, err
+	}
 
-	for ycIndex := editor.cursor.GetOffsetY() - yShift; ycIndex < ycLength-yPadding; ycIndex += 1 {
-		ytIndex := ycIndex + yShift
+	if err := editor.display.RedrawMenu(editor.menu); err != nil {
+		return false, err
+	}
 
-		if ycIndex < ytLength {
-			xtLength, err := editor.text.GetLineLengthByOffset(ytIndex)
-			if err != nil {
-				return err
-			}
+	if err := editor.display.RenderChanges(); err != nil {
+		return false, err
+	}
 
-			for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
-				xtIndex := xcIndex + xShift
+	resultValue := false
+	resultReady := false
 
-				var char rune = ' '
+	for {
+		ev := editor.console.WatchConsoleEvent()
+		switch event := ev.(type) {
 
-				if xtIndex < xtLength {
-					char, err = editor.text.GetCharacterByOffsets(xtIndex, ytIndex)
-					if err != nil {
-						return err
+		case ConsoleEventKeyPress:
+			{
+				if event.Char == 't' || event.Char == 'T' {
+					resultValue = true
+					resultReady = true
+				}
+
+				if event.Char == 'n' || event.Char == 'N' {
+					resultValue = false
+					resultReady = true
+				}
+
+				if event.Modifier == ModifierCtrl && event.Char == 'c' {
+					resultValue = false
+					resultReady = true
+				}
+
+				if resultReady {
+					if err := editor.menu.SetNotificationText(""); err != nil {
+						return false, err
 					}
+
+					if err := editor.display.RedrawMenu(editor.menu); err != nil {
+						return false, err
+					}
+
+					if err := editor.display.RenderChanges(); err != nil {
+						return false, err
+					}
+
+					return resultValue, nil
 				}
 
-				if err := editor.console.InsertCharacter(xcIndex, ycIndex, char); err != nil {
-					return err
-				}
 			}
 
-			continue
-		}
-
-		for xcIndex := 0; xcIndex < xcLength-xPadding; xcIndex += 1 {
-			if err := editor.console.InsertCharacter(xcIndex, ycIndex, ' '); err != nil {
-				return err
+		// NOTE: The inner editor loop is also handling the resize event to avoid UI glitches
+		// on resizing during an active prompt.
+		case ConsoleEventResize:
+			{
+				editorBreak, err := editor.handleConsoleEventResize(event)
+				if err != nil || editorBreak {
+					return false, err
+				}
 			}
 		}
 	}
-
-	return nil
 }
 
 // NOTE: This section contains all the key-specific handler functions
 
 // [<] Handle left arrow key. Handling the movement of the cursor to the left, considering both x and y axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
 func (editor *Editor) handleKeyLeftArrow() error {
 	xOffset := editor.cursor.GetOffsetX()
 	if xOffset > 0 {
@@ -437,10 +421,6 @@ func (editor *Editor) handleKeyLeftArrow() error {
 }
 
 // [>] Handle right arrow key. Handling the movement of the cursor to the right, considering both x and y axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
 func (editor *Editor) handleKeyRightArrow() error {
 	xOffset := editor.cursor.GetOffsetX()
 
@@ -473,10 +453,6 @@ func (editor *Editor) handleKeyRightArrow() error {
 }
 
 // [/\] Handle up arrow key. Handling the movement of the cursor to the line above, considering both y and x axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
 func (editor *Editor) handleKeyUpArrow() error {
 	yOffset := editor.cursor.GetOffsetY()
 	if yOffset == 0 {
@@ -506,10 +482,6 @@ func (editor *Editor) handleKeyUpArrow() error {
 }
 
 // [\/] Handle down arrow key. Handling the movement of the cursor to the line below, considering both y and x axis
-//
-// TODO: Partial cursor position change. May cause invalid cursor state.
-// Cursor position handling function callers should backup prev position
-// in order to restore it if the operation returns an error
 func (editor *Editor) handleKeyDownArrow() error {
 	yOffset := editor.cursor.GetOffsetY()
 	if yOffset == editor.text.GetLineCount()-1 {
@@ -544,7 +516,7 @@ func (editor *Editor) handleKeyEnter() error {
 		return err
 	}
 
-	if err := editor.redrawBelow(true); err != nil {
+	if err := editor.display.RedrawTextBelow(editor.text, true); err != nil {
 		return err
 	}
 
@@ -581,7 +553,7 @@ func (editor *Editor) handleKeyBackspace() error {
 		// And a func with such capabilities would still redraw the content below. It can only optimize
 		// endge cases when we are editing the last line in current display range. Too much hustle for
 		// such negligible performance improvement.
-		if err := editor.redrawFull(); err != nil {
+		if err := editor.display.RedrawTextFull(editor.text); err != nil {
 			return err
 		}
 
@@ -597,7 +569,7 @@ func (editor *Editor) handleKeyBackspace() error {
 		return err
 	}
 
-	if err := editor.redrawLine(true); err != nil {
+	if err := editor.display.RedrawTextLine(editor.text, true); err != nil {
 		return err
 	}
 
@@ -629,7 +601,7 @@ func (editor *Editor) handleKeyDelete() error {
 			return err
 		}
 
-		if err := editor.redrawBelow(true); err != nil {
+		if err := editor.display.RedrawTextBelow(editor.text, true); err != nil {
 			return err
 		}
 
@@ -641,7 +613,7 @@ func (editor *Editor) handleKeyDelete() error {
 		return err
 	}
 
-	if err := editor.redrawLine(true); err != nil {
+	if err := editor.display.RedrawTextLine(editor.text, true); err != nil {
 		return err
 	}
 
@@ -654,7 +626,7 @@ func (editor *Editor) handleKeyPrintableCharacter(char rune) error {
 		return err
 	}
 
-	if err := editor.redrawLine(true); err != nil {
+	if err := editor.display.RedrawTextLine(editor.text, true); err != nil {
 		return err
 	}
 
@@ -666,8 +638,125 @@ func (editor *Editor) handleKeyPrintableCharacter(char rune) error {
 	return nil
 }
 
-// [Ctrl] + [ASCII 0x20 - 0x7E] Handle file save keybind
-// TODO: Notification after widget implementation
+// [Ctrl] + [<] Handle multi-key left jump to next word
+func (editor *Editor) handleKeysCtrlArrowLeft() error {
+	xOffset := editor.cursor.GetOffsetX()
+	yOffset := editor.cursor.GetOffsetY()
+
+	if xOffset == 0 && yOffset == 0 {
+		return nil
+	}
+
+	if xOffset == 0 && yOffset > 0 {
+		yOffset -= 1
+		targetXLength, err := editor.text.GetLineLengthByOffset(yOffset)
+		if err != nil {
+			return err
+		}
+
+		return editor.cursor.SetOffsets(targetXLength, yOffset)
+	}
+
+	xOffset -= 1
+	targetXIndex := -1
+
+	for xIndex := xOffset; xIndex > 0; xIndex -= 1 {
+		char, err := editor.text.GetCharacterByOffsets(xIndex, yOffset)
+		if err != nil {
+			return err
+		}
+
+		if char == ' ' {
+			if targetXIndex != -1 {
+				return editor.cursor.SetOffsetX(targetXIndex)
+			}
+		} else {
+			targetXIndex = xIndex
+		}
+	}
+
+	return editor.cursor.SetOffsetX(0)
+}
+
+// [Ctrl] + [>] Handle multi-key right jump to next word
+func (editor *Editor) handleKeysCtrlArrowRight() error {
+	xOffset := editor.cursor.GetOffsetX()
+	yOffset := editor.cursor.GetOffsetY()
+	yOffsetMax := editor.text.GetLineCount() - 1
+
+	currentXLength, err := editor.text.GetLineLengthByOffset(yOffset)
+	if err != nil {
+		return err
+	}
+
+	if xOffset == currentXLength && yOffset == yOffsetMax {
+		return nil
+	}
+
+	// NOTE: Other text editors jump to next word after switching to line below.
+	// The current implementation always jumps to the start of the line, just like
+	// the left-jump always jumps to end on switching to the line above.
+	if xOffset == currentXLength && yOffset < yOffsetMax {
+		yOffset += 1
+		return editor.cursor.SetOffsets(0, yOffset)
+	}
+
+	targetSpacePassed := false
+
+	for xIndex := xOffset; xIndex < currentXLength; xIndex += 1 {
+		char, err := editor.text.GetCharacterByOffsets(xIndex, yOffset)
+		if err != nil {
+			return err
+		}
+
+		if char == ' ' {
+			targetSpacePassed = true
+		} else {
+			if targetSpacePassed {
+				return editor.cursor.SetOffsetX(xIndex)
+			}
+		}
+	}
+
+	return editor.cursor.SetOffsetX(currentXLength)
+}
+
+// [Ctrl] + [ASCII 0x20 - 0x7E (defined by configuration)] Handle file save keybind
 func (editor *Editor) handleKeybindSave() error {
-	return editor.SaveChanges()
+	if err := editor.SaveChanges(); err != nil {
+		return err
+	}
+
+	if err := editor.menu.SetNotificationText("Changes saved successful."); err != nil {
+		return err
+	}
+
+	if err := editor.text.ResetModificationState(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// [Ctrl] + [ASCII 0x20 - 0x7E (defined by configuration)] Handle program exit keybind. The funcation
+// is returning a bool value that idicates if the program loop should be broken.
+func (editor *Editor) handleKeybindExit() (bool, error) {
+	if !editor.text.IsModified() {
+		return true, nil
+	}
+
+	result, err := editor.menuPrompt("Save pending changes?")
+	if err != nil {
+		return false, err
+	}
+
+	if !result {
+		return false, nil
+	}
+
+	if err := editor.SaveChanges(); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

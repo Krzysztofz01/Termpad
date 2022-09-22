@@ -10,22 +10,13 @@ const (
 	configFilePath = "termpad-config.json"
 )
 
-// TODO: Extract specific categories to coresponding files
 // TODO: Application version specific version migration
-
 // Structure representig the configuration properties insinde the termpad-config.json file
 type Config struct {
-	// NOTE: Global
-
-	// NOTE: Editor
-
-	// NOTE: Display
-
-	// NOTE: Keybinds
-	KeyBindSave string `json:"keybinds_keyBindsSave"`
-
-	// NOTE: Text
-	UsePlatformSpecificEndOfLineSequence bool `json:"text_usePlatformSpecificEndOfLineSequence"`
+	HistoryConfiguration  HistoryConfig  `json:"history-configuration"`
+	KeybindsConfiguration KeybindsConfig `json:"keybinds-configuration"`
+	CursorConfiguration   CursorConfig   `json:"cursor-configuration"`
+	TextConfiguration     TextConfig     `json:"text-configuration"`
 }
 
 // Config structure initialization function. The function is retriving the config file or creating a default one if not present
@@ -54,10 +45,12 @@ func (config *Config) Init() error {
 	}
 
 	// NOTE: Config file not found, creating config file with defaut values
-	config.UsePlatformSpecificEndOfLineSequence = true
-	config.KeyBindSave = "s"
+	config.HistoryConfiguration = CreateDefaultHistoryConfig()
+	config.KeybindsConfiguration = CreateDefaultKeybindsConfig()
+	config.CursorConfiguration = CreateDefaultCursorConfig()
+	config.TextConfiguration = CreateDefaultTextConfig()
 
-	jsonConfig, err := json.Marshal(config)
+	jsonConfig, err := json.MarshalIndent(config, "", " ")
 	if err != nil {
 		return err
 	}

@@ -2,20 +2,36 @@ package main
 
 import (
 	"errors"
+	"runtime"
 	"strings"
 )
 
-// A structure representing the text, which is a container for the List structures
-// TODO: Implement line concatenation feature
-type Text struct {
-	lines    []*Line
-	modified bool
+// TODO: Implement function that will insert multiple characters as array. This function
+// would be very usefull for implementing clipboard pasting.
 
-	// TODO: Implement preferences, preferences should contain information about usage of CRLF/LF
+// A structure representing the text, which is a container for the List structures
+type Text struct {
+	lines             []*Line
+	modified          bool
+	endOfLineSequence string
+	config            *TextConfig
 }
 
 // Text structure initialization funcation
-func (text *Text) Init(textString string, newFile bool) error {
+func (text *Text) Init(textString string, newFile bool, textConfig *TextConfig) error {
+	if textConfig == nil {
+		defaultConfig := CreateDefaultTextConfig()
+		text.config = &defaultConfig
+	} else {
+		text.config = textConfig
+	}
+
+	if strings.Contains(textString, "\r\n") {
+		text.endOfLineSequence = "CRLF"
+	} else {
+		text.endOfLineSequence = "LF"
+	}
+
 	// NOTE: Removing the 0x0D CR (Carriage Return)
 	textString = strings.Replace(textString, "\r", "", -1)
 
@@ -59,7 +75,7 @@ func (text *Text) GetLineLengthByOffset(yOffset int) (int, error) {
 		return 0, errors.New("text: invalid y (vertical) negative offset requested to get")
 	}
 
-	if yOffset > len(text.lines) {
+	if yOffset >= len(text.lines) {
 		return 0, errors.New("text: invalid y (vertical) out of bound offset requested to get")
 	}
 
@@ -84,6 +100,8 @@ func (text *Text) InsertCharacter(char rune, cursor *Cursor) error {
 		return errors.New("text: invalid y (vertical) out of bound offset requested to insert")
 	}
 
+	text.modified = true
+
 	targetLine := text.lines[yOffset]
 	return targetLine.InsertBufferCharacter(char, cursor)
 }
@@ -99,6 +117,8 @@ func (text *Text) RemoveCharacterHead(cursor *Cursor) error {
 	if yOffset > len(text.lines) {
 		return errors.New("text: invalid y (vertical) out of bound offset requested to remove")
 	}
+
+	text.modified = true
 
 	targetLine := text.lines[yOffset]
 	return targetLine.RemoveBufferCharacterHead(cursor)
@@ -116,6 +136,8 @@ func (text *Text) RemoveCharacterTail(cursor *Cursor) error {
 		return errors.New("text: invalid y (vertical) out of bound offset requested to remove")
 	}
 
+	text.modified = true
+
 	targetLine := text.lines[yOffset]
 	return targetLine.RemoveBufferCharacterTail(cursor)
 }
@@ -132,6 +154,8 @@ func (text *Text) InsertLine(cursor *Cursor) error {
 	if yOffset > len(text.lines) {
 		return errors.New("text: invalid y (vertical) out of bound offset requested to split")
 	}
+
+	text.modified = true
 
 	targetLine := text.lines[yOffset]
 
@@ -204,6 +228,8 @@ func (text *Text) CombineLine(cursor *Cursor, lineStepDown bool) error {
 	if yOffset > len(text.lines) {
 		return errors.New("text: invalid y (vertical) out of bound offset requested to combine")
 	}
+
+	text.modified = true
 
 	currentLineBuffer := text.lines[yOffset].GetBufferAsSlice()
 	targetLineBuffer := text.lines[yOffset-1].GetBufferAsSlice()
@@ -286,12 +312,22 @@ func (text *Text) GetCharacterByCursor(cursor *Cursor) (rune, error) {
 }
 
 // Return the text in form of single string
-func (text *Text) GetTextAsString(useCarriageReturn bool) (*string, error) {
+func (text *Text) GetTextAsString() (*string, error) {
 	builder := strings.Builder{}
 
 	lineSeparator := "\n"
-	if useCarriageReturn {
-		lineSeparator = "\r\n"
+	if text.config.UsePlatformSpecificEndOfLineSequence {
+		os := runtime.GOOS
+		switch os {
+		case "windows":
+			lineSeparator = "\r\n"
+		case "darwin":
+			lineSeparator = "\n"
+		case "linux":
+			lineSeparator = "\n"
+		default:
+			lineSeparator = "\n"
+		}
 	}
 
 	for index, line := range text.lines {
@@ -308,4 +344,32 @@ func (text *Text) GetTextAsString(useCarriageReturn bool) (*string, error) {
 
 	builderText := builder.String()
 	return &builderText, nil
+}
+
+// Return a bool value indicating if the current text differs from the persistent text
+func (text *Text) IsModified() bool {
+	return text.modified
+}
+
+// Reset the modification state to indicate that the current and persistent text are the same
+func (text *Text) ResetModificationState() error {
+	text.modified = false
+	return nil
+}
+
+// Return the end-of-line sequence name (CRLF/LF)
+func (text *Text) GetEndOfLineSequenceName() string {
+	return text.endOfLineSequence
+}
+
+// A structure containing the configuration for the text structure
+type TextConfig struct {
+	UsePlatformSpecificEndOfLineSequence bool `json:"use-platform-specific-eol-sequence"`
+}
+
+// Return a new isntance of the text configuration with default values
+func CreateDefaultTextConfig() TextConfig {
+	return TextConfig{
+		UsePlatformSpecificEndOfLineSequence: true,
+	}
 }
