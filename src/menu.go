@@ -6,12 +6,15 @@ import (
 	"strings"
 )
 
+const (
+	MenuHeight = 1
+)
+
 // TODO: Implement text notifications that are showing only for few seconds. This concurrent operation can not interfere with
-// ,,main'' redrawing (usage of semaphores/mutexes?)
+// ,,main'' redrawing (usage of semaphores/mutexes?) (Edit: Currently the message is reseted on next input, good solution for now.)
 
 // Structure representing the menu widget that is rendered on the bottom of the editor display
 type Menu struct {
-	height             int
 	notificationText   string
 	cursorPositionText string
 	fileNameText       string
@@ -20,12 +23,7 @@ type Menu struct {
 }
 
 // Menu widget structure initialization funcation
-func (menu *Menu) Init(menuHeight int, fileName string, eolSequenceName string) error {
-	// TODO: Currently there is not support for height different than ,,1''
-	if menuHeight != 1 {
-		return errors.New("menu: invalid menu height specified")
-	}
-
+func (menu *Menu) Init(fileName string, eolSequenceName string) error {
 	if len(fileName) <= 0 {
 		return errors.New("menu: invalid file name specified")
 	}
@@ -34,7 +32,6 @@ func (menu *Menu) Init(menuHeight int, fileName string, eolSequenceName string) 
 		return errors.New("menu: invalid end-of-line sequence name specified")
 	}
 
-	menu.height = menuHeight
 	menu.fileNameText = fileName
 	menu.eolSequenceText = eolSequenceName
 
