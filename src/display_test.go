@@ -13,7 +13,7 @@ func TestDisplayShouldInitialzieForValidParams(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 }
@@ -27,7 +27,7 @@ func TestDisplayShouldNotInitialzieForInvalidParams(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, nil); err == nil {
+	if err := display.Init(cursor, nil, nil, nil); err == nil {
 		t.Fail()
 	}
 }
@@ -41,7 +41,7 @@ func TestDisplayShouldResizeForValidUpdatedSize(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -69,7 +69,7 @@ func TestDisplayShouldNotResizeForInvalidUpdatedSize(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -87,7 +87,7 @@ func TestDisplayHasSizeChangedShouldCorrectlyIndicateChangedSize(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -105,7 +105,7 @@ func TestDisplayHasSizeChangedShouldCorrectlyIndicateUnchangedSize(t *testing.T)
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -123,7 +123,7 @@ func TestDisplayShouldCalculateCorrectHeightBoundaries(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -145,7 +145,7 @@ func TestDisplayShouldCalculateCorrectWidthBoundaries(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -167,7 +167,7 @@ func TestDisplayShouldCalculateCorrectHeightAndWidthBoundaries(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -189,7 +189,7 @@ func TestDisplayShouldIndicateInBoundries(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -211,7 +211,7 @@ func TestDisplayShouldIndicateOutOfBoundriesForHeight(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -233,7 +233,7 @@ func TestDisplayShouldIndicateOutOfBoundriesForWidth(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -255,7 +255,7 @@ func TestDisplayShouldIndicateOutOfBoundriesForHeightAndWidth(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -282,7 +282,7 @@ func TestDisplayShouldReturnCorrectSpecifiedPadding(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, padding, console); err != nil {
+	if err := display.Init(cursor, padding, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -320,7 +320,7 @@ func TestDisplayShouldReturnCorrectUnspecifiedPadding(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -358,7 +358,7 @@ func TestDisplayShouldReturnFullSize(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -387,7 +387,7 @@ func TestDisplayShouldReturnCorrectTextSizeForInitializedPadding(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, padding, console); err != nil {
+	if err := display.Init(cursor, padding, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -411,7 +411,7 @@ func TestDisplayShouldReturnCorrectTextSizeForUninitializedPadding(t *testing.T)
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console); err != nil {
+	if err := display.Init(cursor, nil, console, nil); err != nil {
 		t.Fail()
 	}
 

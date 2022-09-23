@@ -50,6 +50,7 @@ func (numeration *Numeration) GenerateOutputBuffer(yOffset int, yShift int, heig
 		}
 
 		if len(number) > NumerationWidth {
+			// TODO: Fix the renage. Other behaviour is expected
 			numerationBuffer[yIndex] = fmt.Sprintf("*%s", number[len(number)-NumerationWidth-1:])
 		} else {
 			for xFill := 0; xFill < NumerationWidth-len(number); xFill += 1 {

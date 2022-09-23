@@ -13,6 +13,7 @@ const (
 // TODO: Application version specific version migration
 // Structure representig the configuration properties insinde the termpad-config.json file
 type Config struct {
+	DisplayConfiguration  DisplayConfig  `json:"display-configuration"`
 	HistoryConfiguration  HistoryConfig  `json:"history-configuration"`
 	KeybindsConfiguration KeybindsConfig `json:"keybinds-configuration"`
 	CursorConfiguration   CursorConfig   `json:"cursor-configuration"`
@@ -45,6 +46,7 @@ func (config *Config) Init() error {
 	}
 
 	// NOTE: Config file not found, creating config file with defaut values
+	config.DisplayConfiguration = CreateDefaultDisplayConfig()
 	config.HistoryConfiguration = CreateDefaultHistoryConfig()
 	config.KeybindsConfiguration = CreateDefaultKeybindsConfig()
 	config.CursorConfiguration = CreateDefaultCursorConfig()

@@ -7,6 +7,9 @@ import "errors"
 // TODO: Add unit-test for redrawing and size change logic. This task will require to implement a more precies
 // behavior to the mock console and will require mock text structures
 
+// TODO: Padding is too ,,general'' for the display purpose. There should be component specific paddings etc. and
+// methods that allow to get the text boundaries without knowing the details about all display widgets
+
 // Structure representing the console display. It contains the calculated and fixed horizontal and vertical boundaries
 type Display struct {
 	height              int
@@ -17,10 +20,18 @@ type Display struct {
 	padding             *Padding
 	cursor              *Cursor
 	console             Console
+	config              *DisplayConfig
 }
 
 // Display structure initialization function
-func (display *Display) Init(cursor *Cursor, padding *Padding, console Console) error {
+func (display *Display) Init(cursor *Cursor, padding *Padding, console Console, displayConfig *DisplayConfig) error {
+	if displayConfig == nil {
+		defaultConfig := CreateDefaultDisplayConfig()
+		display.config = &defaultConfig
+	} else {
+		display.config = displayConfig
+	}
+
 	display.xCalculatedBoundary = 0
 	display.yCalculatedBoundary = 0
 
@@ -388,4 +399,16 @@ func (display *Display) RedrawMenu(menu *Menu) error {
 	}
 
 	return nil
+}
+
+// A structure containing the configuration for the display structure
+type DisplayConfig struct {
+	LineNumerationEnabled bool `json:"enable-line-numeration"`
+}
+
+// Return a new isntance of the display configuration with default values
+func CreateDefaultDisplayConfig() DisplayConfig {
+	return DisplayConfig{
+		LineNumerationEnabled: false,
+	}
 }

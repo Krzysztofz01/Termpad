@@ -9,6 +9,9 @@ import (
 
 // TODO: Move key handler to helper struct
 // TODO: Implement ,,alternate screen” in order to restore previous console content after program exit
+// TODO: The arrow movement is not respecting the horizontal paddings
+// TODO: One of the redrawing (full?) functions are not respecting the horizontal paddings
+// TODO: Display ,,layer'' option to disable numeration
 
 // Structure representing the editor instance which is a warapper for text I/O
 type Editor struct {
@@ -99,7 +102,7 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 	}
 
 	editor.display = new(Display)
-	if err := editor.display.Init(editor.cursor, editorPadding, editor.console); err != nil {
+	if err := editor.display.Init(editor.cursor, editorPadding, editor.console, &editor.config.DisplayConfiguration); err != nil {
 		return err
 	}
 
