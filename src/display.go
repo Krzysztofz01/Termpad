@@ -24,7 +24,7 @@ type Display struct {
 }
 
 // Display structure initialization function
-func (display *Display) Init(cursor *Cursor, padding *Padding, console Console, displayConfig *DisplayConfig) error {
+func (display *Display) Init(cursor *Cursor, console Console, displayConfig *DisplayConfig) error {
 	if displayConfig == nil {
 		defaultConfig := CreateDefaultDisplayConfig()
 		display.config = &defaultConfig
@@ -35,20 +35,13 @@ func (display *Display) Init(cursor *Cursor, padding *Padding, console Console, 
 	display.xCalculatedBoundary = 0
 	display.yCalculatedBoundary = 0
 
-	pTop := 0
-	pBottom := 0
-	pLeft := 0
-	pRight := 0
-
-	if padding != nil {
-		pTop = padding.GetTopPadding()
-		pBottom = padding.GetBottomPadding()
-		pLeft = padding.GetLeftPadding()
-		pRight = padding.GetRightPadding()
+	var numerationPadding int = 0
+	if display.config.LineNumerationEnabled {
+		numerationPadding = NumerationWidth
 	}
 
 	display.padding = new(Padding)
-	if err := display.padding.Init(pTop, pBottom, pLeft, pRight); err != nil {
+	if err := display.padding.Init(0, MenuHeight, numerationPadding, 0); err != nil {
 		return err
 	}
 
@@ -82,8 +75,8 @@ func (display *Display) Resize(width int, height int) error {
 		return errors.New("display: invalid display height value")
 	}
 
-	xPadding := display.GetXOffsetPadding()
-	yPadding := display.GetYOffsetPadding()
+	xPadding := display.padding.GetLeftPadding() + display.padding.GetRightPadding()
+	yPadding := display.padding.GetTopPadding() + display.padding.GetBottomPadding()
 
 	display.width = width
 	display.height = height
@@ -154,44 +147,56 @@ func (display *Display) GetTextDisplaySize() (int, int) {
 	return width, height
 }
 
-// Return the x (horizontal) display padding (left and right), specified on display initialization
-func (display *Display) GetXOffsetPadding() int {
-	return display.padding.GetLeftPadding() + display.padding.GetRightPadding()
+// Return the horizontal start index and count of next indexes dedicated for text on the display
+func (display *Display) GetTextDisplayHorizontalRange() (int, int) {
+	minIndex := 0 + display.padding.GetLeftPadding()
+	indexCount := display.width - minIndex - display.padding.GetRightPadding()
+
+	return minIndex, indexCount
 }
 
-// Return the left x (horizontal) display padding, specified on display initialization
-func (display *Display) GetXLeftOffsetPadding() int {
-	return display.padding.GetLeftPadding()
-}
+// Return the vertical start index and count of the next indexes dedicated for text on the display
+func (display *Display) GetTextDisplayVerticalRange() (int, int) {
+	minIndex := 0 + display.padding.GetTopPadding()
+	indexCount := display.height - minIndex - display.padding.GetBottomPadding()
 
-// Return the right x (horizontal) display padding, specified on display initialization
-func (display *Display) GetXRightOffsetPadding() int {
-	return display.padding.GetRightPadding()
-}
-
-// Return the y (vertical) display padding (top and bottom), specified on display initialization
-func (display *Display) GetYOffsetPadding() int {
-	return display.padding.GetTopPadding() + display.padding.GetBottomPadding()
-}
-
-// Return the y (vertical) display padding, specified on display initialization
-func (display *Display) GetYTopOffsetPadding() int {
-	return display.padding.GetTopPadding()
-}
-
-// Return the y (vertical) display padding, specified on display initialization
-func (display *Display) GetYBottomOffsetPadding() int {
-	return display.padding.GetBottomPadding()
+	return minIndex, indexCount
 }
 
 // Return the x (horizontal) display offset shift, calculated from the display size and cursor position
+// NOTE: Currently this function in never called outside of the display struct. This functions can be removed in the future.
 func (display *Display) GetXOffsetShift() int {
 	return display.xCalculatedBoundary
 }
 
 // Return the y (vertical) display offset shift, calculated frmo the display size and cursor position
+// NOTE: Currently this function in never called outside of the display struct. This functions can be removed in the future.
 func (display *Display) GetYOffsetShift() int {
 	return display.yCalculatedBoundary
+}
+
+// Return the left x (horizontal) display padding, specified on display initialization
+// NOTE: Currently this funcation is never used, but could be usefull for editor/cursor movement calculations
+func (display *Display) GetXLeftOffsetPadding() int {
+	return display.padding.GetLeftPadding()
+}
+
+// Return the right x (horizontal) display padding, specified on display initialization
+// NOTE: Currently this funcation is never used, but could be usefull for editor/cursor movement calculations
+func (display *Display) GetXRightOffsetPadding() int {
+	return display.padding.GetRightPadding()
+}
+
+// Return the y (vertical) display padding, specified on display initialization
+// NOTE: Currently this funcation is never used, but could be usefull for editor/cursor movement calculations
+func (display *Display) GetYTopOffsetPadding() int {
+	return display.padding.GetTopPadding()
+}
+
+// Return the y (vertical) display padding, specified on display initialization
+// NOTE: Currently this funcation is never used, but could be usefull for editor/cursor movement calculations
+func (display *Display) GetYBottomOffsetPadding() int {
+	return display.padding.GetBottomPadding()
 }
 
 // Return a bool value indicating whether the cursor is currenlty ,,visible'' according to the offsets (boundaries)
@@ -246,7 +251,7 @@ func (display *Display) RedrawTextFull(text *Text) error {
 	ybPadding := display.padding.GetBottomPadding()
 
 	for ycIndex := ytPadding; ycIndex < display.height-ybPadding; ycIndex += 1 {
-		ytIndex := ycIndex + display.yCalculatedBoundary
+		ytIndex := ycIndex + display.yCalculatedBoundary - ytPadding
 
 		if ytIndex < yTextLength {
 			xtLength, err := text.GetLineLengthByOffset(ytIndex)
@@ -255,7 +260,7 @@ func (display *Display) RedrawTextFull(text *Text) error {
 			}
 
 			for xcIndex := xlPadding; xcIndex < display.width-xrPadding; xcIndex += 1 {
-				xtIndex := xcIndex + display.xCalculatedBoundary
+				xtIndex := xcIndex + display.xCalculatedBoundary - xlPadding
 
 				var char rune = ' '
 
@@ -302,7 +307,7 @@ func (display *Display) RedrawTextLine(text *Text, fullRedrawFallback bool) erro
 	xrPadding := display.padding.GetRightPadding()
 
 	for xcIndex := xlPadding; xcIndex < display.width-xrPadding; xcIndex += 1 {
-		xtIndex := xcIndex + display.xCalculatedBoundary
+		xtIndex := xcIndex + display.xCalculatedBoundary - xlPadding
 
 		var char rune = ' '
 		if xtIndex < tWidth {
@@ -343,7 +348,7 @@ func (display *Display) RedrawTextBelow(text *Text, fullRedrawFallback bool) err
 			}
 
 			for xcIndex := xlPadding; xcIndex < display.width-xrPadding; xcIndex += 1 {
-				xtIndex := xcIndex + display.xCalculatedBoundary
+				xtIndex := xcIndex + display.xCalculatedBoundary - xlPadding
 
 				var char rune = ' '
 
