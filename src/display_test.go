@@ -13,7 +13,7 @@ func TestDisplayShouldInitialzieForValidParams(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 }
@@ -27,7 +27,7 @@ func TestDisplayShouldNotInitialzieForInvalidParams(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, nil, nil); err == nil {
+	if err := display.Init(cursor, nil, nil); err == nil {
 		t.Fail()
 	}
 }
@@ -41,7 +41,7 @@ func TestDisplayShouldResizeForValidUpdatedSize(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -69,7 +69,7 @@ func TestDisplayShouldNotResizeForInvalidUpdatedSize(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -87,7 +87,7 @@ func TestDisplayHasSizeChangedShouldCorrectlyIndicateChangedSize(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -105,7 +105,7 @@ func TestDisplayHasSizeChangedShouldCorrectlyIndicateUnchangedSize(t *testing.T)
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -123,7 +123,7 @@ func TestDisplayShouldCalculateCorrectHeightBoundaries(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -145,7 +145,7 @@ func TestDisplayShouldCalculateCorrectWidthBoundaries(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -167,7 +167,7 @@ func TestDisplayShouldCalculateCorrectHeightAndWidthBoundaries(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -189,7 +189,7 @@ func TestDisplayShouldIndicateInBoundries(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -211,7 +211,7 @@ func TestDisplayShouldIndicateOutOfBoundriesForHeight(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -233,7 +233,7 @@ func TestDisplayShouldIndicateOutOfBoundriesForWidth(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -255,7 +255,7 @@ func TestDisplayShouldIndicateOutOfBoundriesForHeightAndWidth(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -264,87 +264,6 @@ func TestDisplayShouldIndicateOutOfBoundriesForHeightAndWidth(t *testing.T) {
 	}
 
 	if display.CursorInBoundries() {
-		t.Fail()
-	}
-}
-
-func TestDisplayShouldReturnCorrectSpecifiedPadding(t *testing.T) {
-	console := CreateConsoleMockup()
-
-	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console, nil); err != nil {
-		t.Fail()
-	}
-
-	padding := new(Padding)
-	if err := padding.Init(2, 4, 3, 6); err != nil {
-		t.Fail()
-	}
-
-	display := new(Display)
-	if err := display.Init(cursor, padding, console, nil); err != nil {
-		t.Fail()
-	}
-
-	if display.GetXOffsetPadding() != 9 {
-		t.Fail()
-	}
-
-	if display.GetXLeftOffsetPadding() != 3 {
-		t.Fail()
-	}
-
-	if display.GetXRightOffsetPadding() != 6 {
-		t.Fail()
-	}
-
-	if display.GetYOffsetPadding() != 6 {
-		t.Fail()
-	}
-
-	if display.GetYTopOffsetPadding() != 2 {
-		t.Fail()
-	}
-
-	if display.GetYBottomOffsetPadding() != 4 {
-		t.Fail()
-	}
-}
-
-func TestDisplayShouldReturnCorrectUnspecifiedPadding(t *testing.T) {
-	console := CreateConsoleMockup()
-
-	cursor := new(Cursor)
-	if err := cursor.Init(0, 0, console, nil); err != nil {
-		t.Fail()
-	}
-
-	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
-		t.Fail()
-	}
-
-	if display.GetXOffsetPadding() != 0 {
-		t.Fail()
-	}
-
-	if display.GetXLeftOffsetPadding() != 0 {
-		t.Fail()
-	}
-
-	if display.GetXRightOffsetPadding() != 0 {
-		t.Fail()
-	}
-
-	if display.GetYOffsetPadding() != 0 {
-		t.Fail()
-	}
-
-	if display.GetYTopOffsetPadding() != 0 {
-		t.Fail()
-	}
-
-	if display.GetYBottomOffsetPadding() != 0 {
 		t.Fail()
 	}
 }
@@ -358,7 +277,7 @@ func TestDisplayShouldReturnFullSize(t *testing.T) {
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -373,7 +292,7 @@ func TestDisplayShouldReturnFullSize(t *testing.T) {
 	}
 }
 
-func TestDisplayShouldReturnCorrectTextSizeForInitializedPadding(t *testing.T) {
+func TestDisplayShouldReturnCorrectTextSizeWhenPaddingIsApplied(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
@@ -381,28 +300,23 @@ func TestDisplayShouldReturnCorrectTextSizeForInitializedPadding(t *testing.T) {
 		t.Fail()
 	}
 
-	padding := new(Padding)
-	if err := padding.Init(2, 4, 1, 8); err != nil {
-		t.Fail()
-	}
-
 	display := new(Display)
-	if err := display.Init(cursor, padding, console, nil); err != nil {
+	if err := display.Init(cursor, console, &DisplayConfig{LineNumerationEnabled: true}); err != nil {
 		t.Fail()
 	}
 
 	width, height := display.GetTextDisplaySize()
 
-	if width != 1 {
+	if width != 10-NumerationWidth {
 		t.Fail()
 	}
 
-	if height != 4 {
+	if height != 10-MenuHeight {
 		t.Fail()
 	}
 }
 
-func TestDisplayShouldReturnCorrectTextSizeForUninitializedPadding(t *testing.T) {
+func TestDisplayShouldReturnCorrectTextSizeWhenNoPaddingApplied(t *testing.T) {
 	console := CreateConsoleMockup()
 
 	cursor := new(Cursor)
@@ -411,7 +325,7 @@ func TestDisplayShouldReturnCorrectTextSizeForUninitializedPadding(t *testing.T)
 	}
 
 	display := new(Display)
-	if err := display.Init(cursor, nil, console, nil); err != nil {
+	if err := display.Init(cursor, console, nil); err != nil {
 		t.Fail()
 	}
 
@@ -421,7 +335,163 @@ func TestDisplayShouldReturnCorrectTextSizeForUninitializedPadding(t *testing.T)
 		t.Fail()
 	}
 
-	if height != 10 {
+	if height != 10-MenuHeight {
+		t.Fail()
+	}
+}
+
+func TestDisplayShouldReturnCorrectPaddingsWhenPaddingIsApplied(t *testing.T) {
+	console := CreateConsoleMockup()
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 0, console, nil); err != nil {
+		t.Fail()
+	}
+
+	display := new(Display)
+	if err := display.Init(cursor, console, &DisplayConfig{LineNumerationEnabled: true}); err != nil {
+		t.Fail()
+	}
+
+	if display.GetXLeftOffsetPadding() != NumerationWidth {
+		t.Fail()
+	}
+
+	if display.GetXRightOffsetPadding() != 0 {
+		t.Fail()
+	}
+
+	if display.GetYTopOffsetPadding() != 0 {
+		t.Fail()
+	}
+
+	if display.GetYBottomOffsetPadding() != MenuHeight {
+		t.Fail()
+	}
+}
+
+func TestDisplayShouldReturnCorrectPaddingsWhenPaddingIsNotApplied(t *testing.T) {
+	console := CreateConsoleMockup()
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 0, console, nil); err != nil {
+		t.Fail()
+	}
+
+	display := new(Display)
+	if err := display.Init(cursor, console, nil); err != nil {
+		t.Fail()
+	}
+
+	if display.GetXLeftOffsetPadding() != 0 {
+		t.Fail()
+	}
+
+	if display.GetXRightOffsetPadding() != 0 {
+		t.Fail()
+	}
+
+	if display.GetYTopOffsetPadding() != 0 {
+		t.Fail()
+	}
+
+	if display.GetYBottomOffsetPadding() != MenuHeight {
+		t.Fail()
+	}
+}
+
+func TestDisplayShouldReturnCorrectTextHorizontalRangeWhenPaddingApplied(t *testing.T) {
+	console := CreateConsoleMockup()
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 0, console, nil); err != nil {
+		t.Fail()
+	}
+
+	display := new(Display)
+	if err := display.Init(cursor, console, &DisplayConfig{LineNumerationEnabled: true}); err != nil {
+		t.Fail()
+	}
+
+	xMinIndex, xCount := display.GetTextDisplayHorizontalRange()
+
+	if xMinIndex != NumerationWidth {
+		t.Fail()
+	}
+
+	if xCount != 10-NumerationWidth {
+		t.Fail()
+	}
+}
+
+func TestDisplayShouldReturnCorrectTextHorizontalRangeWhenNoPaddingApplied(t *testing.T) {
+	console := CreateConsoleMockup()
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 0, console, nil); err != nil {
+		t.Fail()
+	}
+
+	display := new(Display)
+	if err := display.Init(cursor, console, nil); err != nil {
+		t.Fail()
+	}
+
+	xMinIndex, xCount := display.GetTextDisplayHorizontalRange()
+
+	if xMinIndex != 0 {
+		t.Fail()
+	}
+
+	if xCount != 10 {
+		t.Fail()
+	}
+}
+
+func TestDisplayShouldReturnCorrectTextVerticalRangeWhenPaddingApplied(t *testing.T) {
+	console := CreateConsoleMockup()
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 0, console, nil); err != nil {
+		t.Fail()
+	}
+
+	display := new(Display)
+	if err := display.Init(cursor, console, &DisplayConfig{LineNumerationEnabled: true}); err != nil {
+		t.Fail()
+	}
+
+	yMinIndex, yCount := display.GetTextDisplayVerticalRange()
+
+	if yMinIndex != 0 {
+		t.Fail()
+	}
+
+	if yCount != 10-MenuHeight {
+		t.Fail()
+	}
+}
+
+func TestDisplayShouldReturnCorrectTextVerticalRangeWhenNoPaddingApplied(t *testing.T) {
+	console := CreateConsoleMockup()
+
+	cursor := new(Cursor)
+	if err := cursor.Init(0, 0, console, nil); err != nil {
+		t.Fail()
+	}
+
+	display := new(Display)
+	if err := display.Init(cursor, console, nil); err != nil {
+		t.Fail()
+	}
+
+	yMinIndex, yCount := display.GetTextDisplayVerticalRange()
+
+	if yMinIndex != 0 {
+		t.Fail()
+	}
+
+	if yCount != 10-MenuHeight {
 		t.Fail()
 	}
 }

@@ -96,13 +96,11 @@ func (editor *Editor) Init(filePath string, console Console, config *Config) err
 		return err
 	}
 
-	editorPadding := new(Padding)
-	if err := editorPadding.Init(0, MenuHeight, 0, 0); err != nil {
-		return err
-	}
+	// TODO: Currently the numeration is not supported, due to the fact that the cursor movement requires a refactor to support it
+	editor.config.DisplayConfiguration.LineNumerationEnabled = false
 
 	editor.display = new(Display)
-	if err := editor.display.Init(editor.cursor, editorPadding, editor.console, &editor.config.DisplayConfiguration); err != nil {
+	if err := editor.display.Init(editor.cursor, editor.console, &editor.config.DisplayConfiguration); err != nil {
 		return err
 	}
 
