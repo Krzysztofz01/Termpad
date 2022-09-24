@@ -311,7 +311,7 @@ func (editor *Editor) menuUpdateInformation() error {
 // Helper function creates a ,,confirmation prompt”. The message is displayed as the menu notification and the
 // program input is intercepted. The function will return true on confirm [T] or false on cancle [N]. The function
 // is also intercepting the resize event to make sure the UI beahaviour stays correct.
-func (editor *Editor) menuPrompt(notification string) (bool, error) {
+func (editor *Editor) menuPrompt(notification string) (PromptResult, error) {
 	message := fmt.Sprintf("%s [Y] [N]", notification)
 
 	width, _ := editor.display.GetFullDisplaySize()
@@ -320,18 +320,18 @@ func (editor *Editor) menuPrompt(notification string) (bool, error) {
 	}
 
 	if err := editor.menu.SetNotificationText(message); err != nil {
-		return false, err
+		return Cancle, err
 	}
 
 	if err := editor.display.RedrawMenu(editor.menu); err != nil {
-		return false, err
+		return Cancle, err
 	}
 
 	if err := editor.display.RenderChanges(); err != nil {
-		return false, err
+		return Cancle, err
 	}
 
-	resultValue := false
+	var resultValue PromptResult
 	resultReady := false
 
 	for {
@@ -340,32 +340,32 @@ func (editor *Editor) menuPrompt(notification string) (bool, error) {
 
 		case ConsoleEventKeyPress:
 			{
-				if event.Char == 't' || event.Char == 'T' {
-					resultValue = true
+				if event.Char == 'y' || event.Char == 'Y' {
+					resultValue = Yes
 					resultReady = true
 				}
 
 				if event.Char == 'n' || event.Char == 'N' {
-					resultValue = false
+					resultValue = No
 					resultReady = true
 				}
 
 				if event.Modifier == ModifierCtrl && event.Char == 'c' {
-					resultValue = false
+					resultValue = Cancle
 					resultReady = true
 				}
 
 				if resultReady {
 					if err := editor.menu.SetNotificationText(""); err != nil {
-						return false, err
+						return Cancle, err
 					}
 
 					if err := editor.display.RedrawMenu(editor.menu); err != nil {
-						return false, err
+						return Cancle, err
 					}
 
 					if err := editor.display.RenderChanges(); err != nil {
-						return false, err
+						return Cancle, err
 					}
 
 					return resultValue, nil
@@ -379,7 +379,7 @@ func (editor *Editor) menuPrompt(notification string) (bool, error) {
 			{
 				editorBreak, err := editor.handleConsoleEventResize(event)
 				if err != nil || editorBreak {
-					return false, err
+					return Cancle, err
 				}
 			}
 		}
@@ -753,13 +753,24 @@ func (editor *Editor) handleKeybindExit() (bool, error) {
 		return false, err
 	}
 
-	if !result {
+	if result == Cancle {
 		return false, nil
 	}
 
-	if err := editor.SaveChanges(); err != nil {
-		return false, err
+	if result == Yes {
+		if err := editor.SaveChanges(); err != nil {
+			return false, err
+		}
 	}
 
 	return true, nil
 }
+
+// Helper type representing the results coming from the ,,menu prompt”
+type PromptResult int16
+
+const (
+	Cancle PromptResult = iota
+	Yes
+	No
+)
