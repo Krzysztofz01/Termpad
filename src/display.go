@@ -246,7 +246,7 @@ func (display *Display) RedrawTextFull(text *Text) error {
 	ybPadding := display.padding.GetBottomPadding()
 
 	for ycIndex := ytPadding; ycIndex < display.height-ybPadding; ycIndex += 1 {
-		ytIndex := ycIndex + display.yCalculatedBoundary
+		ytIndex := ycIndex + display.yCalculatedBoundary - ytPadding
 
 		if ytIndex < yTextLength {
 			xtLength, err := text.GetLineLengthByOffset(ytIndex)
@@ -255,7 +255,7 @@ func (display *Display) RedrawTextFull(text *Text) error {
 			}
 
 			for xcIndex := xlPadding; xcIndex < display.width-xrPadding; xcIndex += 1 {
-				xtIndex := xcIndex + display.xCalculatedBoundary
+				xtIndex := xcIndex + display.xCalculatedBoundary - xlPadding
 
 				var char rune = ' '
 
@@ -302,7 +302,7 @@ func (display *Display) RedrawTextLine(text *Text, fullRedrawFallback bool) erro
 	xrPadding := display.padding.GetRightPadding()
 
 	for xcIndex := xlPadding; xcIndex < display.width-xrPadding; xcIndex += 1 {
-		xtIndex := xcIndex + display.xCalculatedBoundary
+		xtIndex := xcIndex + display.xCalculatedBoundary - xlPadding
 
 		var char rune = ' '
 		if xtIndex < tWidth {
@@ -343,7 +343,7 @@ func (display *Display) RedrawTextBelow(text *Text, fullRedrawFallback bool) err
 			}
 
 			for xcIndex := xlPadding; xcIndex < display.width-xrPadding; xcIndex += 1 {
-				xtIndex := xcIndex + display.xCalculatedBoundary
+				xtIndex := xcIndex + display.xCalculatedBoundary - xlPadding
 
 				var char rune = ' '
 
